@@ -736,7 +736,7 @@ const challenges = [
       { letter: 'C', text: 'El nombre de la variable "userInput" es poco descriptivo' },
       { letter: 'D', text: 'Falta declarar output con let en lugar de const' }
     ],
-    hint: 'Piensa qué ocurre si el usuario escribe: <script>document.cookie</script> como comentario.',
+    hint: 'Piensa qué ocurre si el usuario escribe: &lt;script&gt;document.cookie&lt;/script&gt; como comentario.',
     explanation: 'Usar <code>innerHTML</code> con contenido no sanitizado permite a un atacante inyectar HTML y scripts que se ejecutarán en el navegador de cualquier usuario que vea el comentario. Esto es un ataque XSS (Cross-Site Scripting) Stored.',
     fix: '<strong>Solución:</strong> Usar <code>textContent</code> en lugar de <code>innerHTML</code>, o sanitizar el input con DOMPurify:<br><code>output.textContent = userInput; // Seguro</code><br><code>output.innerHTML = DOMPurify.sanitize(userInput); // Alternativa</code>'
   },
