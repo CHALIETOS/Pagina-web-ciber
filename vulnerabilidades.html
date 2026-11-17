@@ -1,0 +1,1469 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Encuentra la Vulnerabilidad – CiberSec</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary:   #0a0e1a;
+      --bg-secondary: #0d1224;
+      --bg-card:      #111827;
+      --bg-card-hover:#141d30;
+      --accent-green: #00ff41;
+      --accent-cyan:  #00d4ff;
+      --accent-purple:#bf00ff;
+      --text-primary: #e2e8f0;
+      --text-muted:   #64748b;
+      --border-color: #1e293b;
+      --danger:       #ff4444;
+      --warning:      #ffaa00;
+      --success:      #00ff41;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      background: rgba(10, 14, 26, 0.95);
+      border-bottom: 1px solid var(--accent-green);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .navbar-brand {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent-green);
+      text-decoration: none;
+      text-shadow: 0 0 12px rgba(0,255,65,0.5);
+      letter-spacing: 2px;
+    }
+    .navbar-brand span { color: var(--accent-cyan); }
+    .navbar-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+      align-items: center;
+    }
+    .navbar-links a {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .navbar-links a:hover, .navbar-links a.active {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+      box-shadow: 0 0 8px rgba(0,255,65,0.3);
+    }
+    .navbar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+    }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { background: var(--danger); color: white; }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+      text-align: center;
+      padding: 2.5rem 2rem 2rem;
+      background: linear-gradient(180deg, rgba(255,68,68,0.06) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .page-header h1 {
+      font-size: 2.2rem;
+      color: var(--danger);
+      text-shadow: 0 0 20px rgba(255,68,68,0.4);
+      letter-spacing: 2px;
+      margin-bottom: 0.4rem;
+    }
+    .page-header p { color: var(--text-muted); font-size: 1rem; }
+
+    /* ===== GAME CONTAINER ===== */
+    .game-wrap {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── Scoreboard ── */
+    .scoreboard {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      margin-bottom: 1.5rem;
+      flex-wrap: wrap;
+      gap: 12px;
+    }
+    .score-item { text-align: center; }
+    .score-label { font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; display: block; }
+    .score-value { font-size: 1.5rem; font-weight: 700; color: var(--accent-green); text-shadow: 0 0 8px rgba(0,255,65,0.4); }
+    .score-value.cyan { color: var(--accent-cyan); text-shadow: 0 0 8px rgba(0,212,255,0.4); }
+    .score-value.red  { color: var(--danger); text-shadow: 0 0 8px rgba(255,68,68,0.4); }
+
+    /* ── Level Progress ── */
+    .level-info {
+      margin-bottom: 1.2rem;
+    }
+    .level-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+    .level-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .diff-badge {
+      font-size: 0.72rem;
+      padding: 3px 10px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .diff-facil       { background: rgba(0,255,65,0.1);  color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .diff-intermedio  { background: rgba(255,170,0,0.1); color: var(--warning); border: 1px solid var(--warning); }
+    .diff-avanzado    { background: rgba(255,68,68,0.1); color: var(--danger);  border: 1px solid var(--danger); }
+
+    .level-steps {
+      font-size: 0.85rem;
+      color: var(--text-muted);
+    }
+    .progress-bar-wrap {
+      background: var(--border-color);
+      border-radius: 20px;
+      height: 6px;
+      overflow: hidden;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      border-radius: 20px;
+      background: linear-gradient(90deg, var(--accent-green), var(--accent-cyan));
+      transition: width 0.5s ease;
+      box-shadow: 0 0 8px rgba(0,255,65,0.5);
+    }
+
+    /* ── Challenge Card ── */
+    .challenge-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.3s;
+    }
+    .challenge-card.flash-green {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 24px rgba(0,255,65,0.3);
+    }
+    .challenge-card.flash-red {
+      border-color: var(--danger);
+      box-shadow: 0 0 24px rgba(255,68,68,0.3);
+    }
+
+    .challenge-question {
+      padding: 1.4rem 1.5rem 1rem;
+      font-size: 1.05rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+    }
+    .challenge-question .q-icon { font-size: 1.3rem; flex-shrink: 0; }
+
+    /* ── Code Block ── */
+    .code-wrap {
+      background: #090d19;
+      border-bottom: 1px solid var(--border-color);
+      padding: 1.2rem 1.5rem;
+      overflow-x: auto;
+    }
+    .code-block {
+      font-family: 'Cascadia Code', 'Fira Code', 'Consolas', monospace;
+      font-size: 0.85rem;
+      line-height: 1.8;
+      white-space: pre;
+      tab-size: 4;
+    }
+    /* Syntax colors */
+    .s-keyword  { color: #cc99cd; }   /* purple */
+    .s-string   { color: #7ec699; }   /* green  */
+    .s-comment  { color: #608b4e; font-style: italic; }
+    .s-func     { color: #dcdcaa; }   /* yellow */
+    .s-var      { color: #9cdcfe; }   /* light blue */
+    .s-num      { color: #b5cea8; }   /* light green */
+    .s-class    { color: #4ec9b0; }   /* teal */
+    .s-op       { color: #d4d4d4; }
+    .s-attr     { color: #ce9178; }   /* orange */
+    .s-vuln     { color: #ff6b6b; background: rgba(255,68,68,0.08); border-radius: 2px; padding: 0 2px; }
+
+    /* ── Options ── */
+    .options-section {
+      padding: 1.2rem 1.5rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+    .options-label {
+      font-size: 0.8rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 0.8rem;
+    }
+    .options-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+    }
+    .option-btn {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      padding: 12px 14px;
+      color: var(--text-primary);
+      font-size: 0.875rem;
+      cursor: pointer;
+      text-align: left;
+      transition: all 0.2s;
+      display: flex;
+      gap: 10px;
+      align-items: flex-start;
+      line-height: 1.4;
+    }
+    .option-btn:hover:not(:disabled) {
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      background: rgba(0,212,255,0.05);
+    }
+    .option-btn .opt-letter {
+      font-weight: 700;
+      color: var(--accent-cyan);
+      flex-shrink: 0;
+      min-width: 20px;
+    }
+    .option-btn.correct {
+      border-color: var(--accent-green);
+      background: rgba(0,255,65,0.1);
+      color: var(--accent-green);
+      box-shadow: 0 0 10px rgba(0,255,65,0.2);
+    }
+    .option-btn.correct .opt-letter { color: var(--accent-green); }
+    .option-btn.wrong {
+      border-color: var(--danger);
+      background: rgba(255,68,68,0.1);
+      color: var(--danger);
+    }
+    .option-btn.wrong .opt-letter { color: var(--danger); }
+    .option-btn:disabled { cursor: default; opacity: 0.7; }
+
+    /* ── Explanation ── */
+    .explanation {
+      display: none;
+      padding: 1.2rem 1.5rem;
+      border-top: 1px solid var(--border-color);
+      background: rgba(0,0,0,0.2);
+    }
+    .explanation.show { display: block; }
+    .expl-title {
+      font-size: 0.9rem;
+      font-weight: 700;
+      margin-bottom: 0.5rem;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .expl-title.correct-t { color: var(--accent-green); }
+    .expl-title.wrong-t   { color: var(--danger); }
+    .expl-body { font-size: 0.875rem; color: var(--text-muted); line-height: 1.6; }
+    .expl-fix {
+      margin-top: 0.6rem;
+      padding: 10px 14px;
+      background: rgba(0,255,65,0.05);
+      border-left: 3px solid var(--accent-green);
+      border-radius: 0 6px 6px 0;
+      font-size: 0.82rem;
+      color: var(--text-muted);
+    }
+    .expl-fix strong { color: var(--accent-green); }
+
+    /* ── Actions Bar ── */
+    .actions-bar {
+      padding: 1rem 1.5rem;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 10px 20px;
+      border-radius: 6px;
+      border: none;
+      cursor: pointer;
+      font-size: 0.9rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .btn-hint {
+      background: transparent;
+      border: 1px solid var(--warning);
+      color: var(--warning);
+    }
+    .btn-hint:hover { background: rgba(255,170,0,0.1); }
+    .btn-hint:disabled { opacity: 0.4; cursor: default; }
+    .btn-next {
+      background: linear-gradient(135deg, var(--accent-green), #00cc33);
+      color: #0a0e1a;
+      display: none;
+    }
+    .btn-next:hover { box-shadow: 0 0 16px rgba(0,255,65,0.5); transform: translateY(-1px); }
+    .btn-retry {
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      display: none;
+    }
+    .btn-retry:hover { background: rgba(255,68,68,0.1); }
+
+    .hint-box {
+      display: none;
+      padding: 10px 14px;
+      background: rgba(255,170,0,0.08);
+      border: 1px solid rgba(255,170,0,0.3);
+      border-radius: 6px;
+      font-size: 0.85rem;
+      color: var(--warning);
+      width: 100%;
+      margin-top: 4px;
+    }
+    .hint-box.show { display: block; }
+
+    /* ===== FINAL SCREEN ===== */
+    #finalScreen {
+      display: none;
+      text-align: center;
+      padding: 3rem 2rem;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 12px;
+      position: relative;
+      overflow: hidden;
+    }
+    #finalScreen::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: radial-gradient(ellipse at center top, rgba(0,255,65,0.08) 0%, transparent 60%);
+      pointer-events: none;
+    }
+    .final-emoji { font-size: 4rem; margin-bottom: 1rem; display: block; }
+    .final-title { font-size: 2rem; font-weight: 800; color: var(--accent-green); text-shadow: 0 0 20px rgba(0,255,65,0.5); margin-bottom: 0.4rem; letter-spacing: 2px; }
+    .final-rank  { font-size: 1.1rem; color: var(--accent-cyan); margin-bottom: 2rem; }
+    .final-stats {
+      display: flex;
+      gap: 1.5rem;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-bottom: 2.5rem;
+    }
+    .stat-box {
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1rem 1.5rem;
+      min-width: 130px;
+    }
+    .stat-num { font-size: 2rem; font-weight: 800; color: var(--accent-green); display: block; }
+    .stat-lbl { font-size: 0.75rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; }
+    .btn-restart {
+      background: linear-gradient(135deg, var(--accent-cyan), #0088cc);
+      color: #0a0e1a;
+      padding: 12px 32px;
+      border-radius: 8px;
+      border: none;
+      cursor: pointer;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      transition: all 0.2s;
+    }
+    .btn-restart:hover { box-shadow: 0 0 20px rgba(0,212,255,0.5); transform: translateY(-2px); }
+
+    /* ===== TOAST ===== */
+    .toast {
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      padding: 12px 20px;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      font-weight: 600;
+      opacity: 0;
+      transform: translateY(10px);
+      transition: all 0.3s;
+      z-index: 9999;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; transform: translateY(0); }
+    .toast.green { background: rgba(0,255,65,0.15); border: 1px solid var(--accent-green); color: var(--accent-green); }
+    .toast.red   { background: rgba(255,68,68,0.15); border: 1px solid var(--danger); color: var(--danger); }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 600px) {
+      .options-grid { grid-template-columns: 1fr; }
+      .navbar-links { display: none; }
+      .scoreboard { justify-content: center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="dashboard.html" class="navbar-brand">🛡️ Cyber<span>Learn</span></a>
+  <ul class="navbar-links">
+    <li><a href="dashboard.html">Dashboard</a></li>
+    <li><a href="quiz.html">Quiz</a></li>
+    <li><a href="glosario.html">Glosario</a></li>
+    <li><a href="vulnerabilidades.html" class="active">Vulnerabilidades</a></li>
+  </ul>
+  <div class="navbar-user">
+    <span id="navUsername">👤 Usuario</span>
+    <button class="logout-btn" onclick="logout()">Salir</button>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<header class="page-header">
+  <h1>🐛 ENCUENTRA LA VULNERABILIDAD</h1>
+  <p>Analiza el código y detecta el fallo de seguridad. ¡8 desafíos de nivel creciente!</p>
+</header>
+
+<!-- GAME WRAP -->
+<div class="game-wrap">
+
+  <!-- Scoreboard -->
+  <div class="scoreboard">
+    <div class="score-item">
+      <span class="score-label">Puntuación</span>
+      <span class="score-value" id="scoreDisplay">0</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">Nivel</span>
+      <span class="score-value cyan" id="levelDisplay">1 / 8</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">Correctas</span>
+      <span class="score-value" id="correctDisplay">0</span>
+    </div>
+    <div class="score-item">
+      <span class="score-label">Pistas Usadas</span>
+      <span class="score-value red" id="hintsDisplay">0</span>
+    </div>
+  </div>
+
+  <!-- Level Progress -->
+  <div class="level-info">
+    <div class="level-header">
+      <div class="level-title">
+        <span id="levelTitle">Nivel 1</span>
+        <span class="diff-badge" id="diffBadge">Fácil</span>
+      </div>
+      <span class="level-steps" id="levelSteps">1 de 8</span>
+    </div>
+    <div class="progress-bar-wrap">
+      <div class="progress-bar-fill" id="progressBar" style="width: 0%"></div>
+    </div>
+  </div>
+
+  <!-- Challenge Card -->
+  <div class="challenge-card" id="challengeCard">
+
+    <!-- Question -->
+    <div class="challenge-question">
+      <span class="q-icon">🔍</span>
+      <span id="challengeQuestion">¿Cuál es la vulnerabilidad en este código?</span>
+    </div>
+
+    <!-- Code Block -->
+    <div class="code-wrap">
+      <div class="code-block" id="codeBlock"></div>
+    </div>
+
+    <!-- Options -->
+    <div class="options-section">
+      <div class="options-label">Selecciona la respuesta correcta:</div>
+      <div class="options-grid" id="optionsGrid"></div>
+    </div>
+
+    <!-- Explanation (shown after answer) -->
+    <div class="explanation" id="explanationBox">
+      <div class="expl-title" id="explTitle"></div>
+      <div class="expl-body" id="explBody"></div>
+      <div class="expl-fix" id="explFix"></div>
+    </div>
+
+    <!-- Actions -->
+    <div class="actions-bar">
+      <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+        <button class="btn btn-hint" id="hintBtn" onclick="useHint()">💡 Pista (-10 pts)</button>
+        <button class="btn btn-retry" id="retryBtn" onclick="retryLevel()">🔄 Reintentar</button>
+      </div>
+      <button class="btn btn-next" id="nextBtn" onclick="nextLevel()">Siguiente Nivel →</button>
+    </div>
+    <div class="hint-box" id="hintBox"></div>
+
+  </div><!-- /challenge-card -->
+
+  <!-- FINAL SCREEN -->
+  <div id="finalScreen">
+    <span class="final-emoji" id="finalEmoji">🏆</span>
+    <div class="final-title" id="finalTitle">¡Reto Completado!</div>
+    <div class="final-rank" id="finalRank">Rango: Ethical Hacker</div>
+    <div class="final-stats">
+      <div class="stat-box">
+        <span class="stat-num" id="finalScore">0</span>
+        <span class="stat-lbl">Puntos Totales</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num" id="finalCorrect">0</span>
+        <span class="stat-lbl">Correctas</span>
+      </div>
+      <div class="stat-box">
+        <span class="stat-num" id="finalHints">0</span>
+        <span class="stat-lbl">Pistas Usadas</span>
+      </div>
+    </div>
+    <button class="btn-restart" onclick="restartGame()">🔁 Jugar de Nuevo</button>
+  </div>
+
+</div><!-- /game-wrap -->
+
+<!-- TOAST -->
+<div class="toast" id="toast"></div>
+
+<script src="js/auth.js"></script>
+<script>
+/* ============================================================
+   CHALLENGE DATA  –  8 Niveles
+   ============================================================ */
+const challenges = [
+  /* ── LEVEL 1: SQL Injection ── */
+  {
+    level: 1,
+    title: "Sistema de Login",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    question: "¿Cuál es la vulnerabilidad de seguridad en este sistema de autenticación Python?",
+    code: [
+      { t: 's-comment', v: '# Sistema de login - Python/Flask' },
+      { t: '', v: '' },
+      { t: 'line', v: [
+        { t: 's-keyword', v: 'def ' },
+        { t: 's-func',    v: 'authenticate' },
+        { t: 's-op',      v: '(request):' }
+      ]},
+      { t: 'indent', v: [
+        { t: 'line', v: [
+          { t: 's-var', v: 'username' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'request' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'form' },
+          { t: 's-op', v: "['" },
+          { t: 's-attr', v: 'username' },
+          { t: 's-op', v: "']" }
+        ]},
+        { t: 'line', v: [
+          { t: 's-var', v: 'password' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'request' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'form' },
+          { t: 's-op', v: "['" },
+          { t: 's-attr', v: 'password' },
+          { t: 's-op', v: "']" }
+        ]},
+        { t: 's-comment', v: '    # Construir consulta SQL' },
+        { t: 'line', v: [
+          { t: 's-var', v: 'query' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-vuln', v: '"SELECT * FROM users WHERE username=\'" + username + "\' AND password=\'" + password + "\'"' }
+        ]},
+        { t: 'line', v: [
+          { t: 's-var', v: 'cursor' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'execute' },
+          { t: 's-op', v: '(' },
+          { t: 's-var', v: 'query' },
+          { t: 's-op', v: ')' }
+        ]},
+        { t: 'line', v: [
+          { t: 's-var', v: 'result' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'cursor' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'fetchone' },
+          { t: 's-op', v: '()' }
+        ]},
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'return ' },
+          { t: 's-var', v: 'result' },
+          { t: 's-op', v: ' is not ' },
+          { t: 's-keyword', v: 'None' }
+        ]}
+      ]}
+    ],
+    options: [
+      { letter: 'A', text: 'La contraseña no está cifrada antes de comparar' },
+      { letter: 'B', text: 'Inyección SQL por concatenación directa de variables en la consulta', correct: true },
+      { letter: 'C', text: 'Falta validación del formato del email' },
+      { letter: 'D', text: 'El nombre de la tabla "users" es inseguro' }
+    ],
+    hint: 'Presta atención a cómo se construye la variable "query". ¿Qué pasaría si username fuera: \' OR \'1\'=\'1',
+    explanation: 'La concatenación directa de strings en consultas SQL permite a un atacante inyectar código SQL malicioso. Por ejemplo, con el username <code>\' OR \'1\'=\'1</code> la consulta siempre devuelve true.',
+    fix: '<strong>Solución:</strong> Usar consultas parametrizadas (prepared statements): <br><code>cursor.execute("SELECT * FROM users WHERE username=? AND password=?", (username, password))</code>'
+  },
+
+  /* ── LEVEL 2: XSS ── */
+  {
+    level: 2,
+    title: "Sección de Comentarios",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    question: "¿Qué problema de seguridad tiene este código JavaScript del frontend?",
+    code: [
+      { t: 's-comment', v: '// Renderizar comentario del usuario en el DOM' },
+      { t: '', v: '' },
+      { t: 'line', v: [
+        { t: 's-keyword', v: 'function ' },
+        { t: 's-func', v: 'displayComment' },
+        { t: 's-op', v: '() {' }
+      ]},
+      { t: 'indent', v: [
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'const ' },
+          { t: 's-var', v: 'userInput' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-func', v: 'document' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'getElementById' },
+          { t: 's-op', v: "(" },
+          { t: 's-string', v: "'comment'" },
+          { t: 's-op', v: ').' },
+          { t: 's-var', v: 'value' },
+          { t: 's-op', v: ';' }
+        ]},
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'const ' },
+          { t: 's-var', v: 'output' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-func', v: 'document' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'getElementById' },
+          { t: 's-op', v: "(" },
+          { t: 's-string', v: "'output'" },
+          { t: 's-op', v: ');' }
+        ]},
+        { t: '', v: '' },
+        { t: 's-comment', v: '  // Mostrar el comentario directamente' },
+        { t: 'line', v: [
+          { t: 's-var', v: 'output' },
+          { t: 's-op', v: '.' },
+          { t: 's-vuln', v: 'innerHTML' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'userInput' },
+          { t: 's-op', v: ';  ' },
+          { t: 's-comment', v: '// ← Peligro aquí' }
+        ]},
+        { t: '', v: '' },
+        { t: 's-comment', v: '  // Guardar en servidor...' },
+        { t: 'line', v: [
+          { t: 's-func', v: 'saveComment' },
+          { t: 's-op', v: '(' },
+          { t: 's-var', v: 'userInput' },
+          { t: 's-op', v: ');' }
+        ]}
+      ]},
+      { t: 's-op', v: '}' }
+    ],
+    options: [
+      { letter: 'A', text: 'Falta aplicar estilos CSS al elemento output' },
+      { letter: 'B', text: 'XSS: innerHTML con input no sanitizado permite ejecutar scripts maliciosos', correct: true },
+      { letter: 'C', text: 'El nombre de la variable "userInput" es poco descriptivo' },
+      { letter: 'D', text: 'Falta declarar output con let en lugar de const' }
+    ],
+    hint: 'Piensa qué ocurre si el usuario escribe: <script>document.cookie</script> como comentario.',
+    explanation: 'Usar <code>innerHTML</code> con contenido no sanitizado permite a un atacante inyectar HTML y scripts que se ejecutarán en el navegador de cualquier usuario que vea el comentario. Esto es un ataque XSS (Cross-Site Scripting) Stored.',
+    fix: '<strong>Solución:</strong> Usar <code>textContent</code> en lugar de <code>innerHTML</code>, o sanitizar el input con DOMPurify:<br><code>output.textContent = userInput; // Seguro</code><br><code>output.innerHTML = DOMPurify.sanitize(userInput); // Alternativa</code>'
+  },
+
+  /* ── LEVEL 3: Hardcoded Credentials ── */
+  {
+    level: 3,
+    title: "Configuración de Base de Datos",
+    difficulty: "facil",
+    diffLabel: "Fácil",
+    question: "¿Qué práctica insegura contiene este archivo de configuración Python?",
+    code: [
+      { t: 's-comment', v: '# config.py - Configuración de producción' },
+      { t: '', v: '' },
+      { t: 'line', v: [
+        { t: 's-var', v: 'DB_HOST' },
+        { t: 's-op', v: ' = ' },
+        { t: 's-string', v: '"localhost"' }
+      ]},
+      { t: 'line', v: [
+        { t: 's-var', v: 'DB_PORT' },
+        { t: 's-op', v: ' = ' },
+        { t: 's-num', v: '5432' }
+      ]},
+      { t: 'line', v: [
+        { t: 's-var', v: 'DB_USER' },
+        { t: 's-op', v: ' = ' },
+        { t: 's-string', v: '"admin"' }
+      ]},
+      { t: 'line', v: [
+        { t: 's-var', v: 'DB_PASSWORD' },
+        { t: 's-op', v: ' = ' },
+        { t: 's-vuln', v: '"SuperSecret123!"' },
+        { t: 's-comment', v: '  # ← Problema aquí' }
+      ]},
+      { t: 'line', v: [
+        { t: 's-var', v: 'DB_NAME' },
+        { t: 's-op', v: ' = ' },
+        { t: 's-string', v: '"produccion"' }
+      ]},
+      { t: '', v: '' },
+      { t: 's-comment', v: '# API Keys' },
+      { t: 'line', v: [
+        { t: 's-var', v: 'SECRET_KEY' },
+        { t: 's-op', v: ' = ' },
+        { t: 's-vuln', v: '"a3f9b2e1d4c7"' }
+      ]},
+      { t: 'line', v: [
+        { t: 's-var', v: 'API_KEY' },
+        { t: 's-op', v: ' = ' },
+        { t: 's-vuln', v: '"sk-prod-abc123xyz789"' }
+      ]}
+    ],
+    options: [
+      { letter: 'A', text: 'El nombre de la base de datos "produccion" debería ir cifrado' },
+      { letter: 'B', text: 'Credenciales y secretos hardcodeados directamente en el código fuente', correct: true },
+      { letter: 'C', text: 'Falta cifrado del host de la base de datos' },
+      { letter: 'D', text: 'El usuario "admin" no tiene privilegios suficientes' }
+    ],
+    hint: 'Imagina que este archivo se sube a un repositorio público de GitHub. ¿Qué información quedaría expuesta?',
+    explanation: 'Incluir contraseñas, API keys y secretos directamente en el código fuente es una vulnerabilidad crítica. Si el código se sube a un repositorio (incluso privado), o alguien accede al servidor, todas las credenciales quedan comprometidas.',
+    fix: '<strong>Solución:</strong> Usar variables de entorno y un archivo .env excluido del repositorio:<br><code>import os<br>DB_PASSWORD = os.environ.get("DB_PASSWORD")<br>API_KEY = os.environ.get("API_KEY")</code>'
+  },
+
+  /* ── LEVEL 4: Command Injection ── */
+  {
+    level: 4,
+    title: "Visualizador de Logs",
+    difficulty: "intermedio",
+    diffLabel: "Intermedio",
+    question: "Este endpoint permite ver archivos de log. ¿Qué vulnerabilidad crítica contiene?",
+    code: [
+      { t: 's-keyword', v: 'import ' },
+      { t: 's-var', v: 'os' },
+      { t: '', v: '' },
+      { t: 's-comment', v: '# Endpoint: GET /logs?file=app.log' },
+      { t: '', v: '' },
+      { t: 'line', v: [
+        { t: 's-keyword', v: 'def ' },
+        { t: 's-func', v: 'view_log' },
+        { t: 's-op', v: '(request):' }
+      ]},
+      { t: 'indent', v: [
+        { t: 'line', v: [
+          { t: 's-var', v: 'filename' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'request' },
+          { t: 's-op', v: '.' },
+          { t: 's-var', v: 'args' },
+          { t: 's-op', v: ".get(" },
+          { t: 's-string', v: "'file'" },
+          { t: 's-op', v: ')' }
+        ]},
+        { t: '', v: '' },
+        { t: 's-comment', v: '    # Ejecutar comando del sistema' },
+        { t: 'line', v: [
+          { t: 's-var', v: 'os' },
+          { t: 's-op', v: '.' },
+          { t: 's-vuln', v: 'system' },
+          { t: 's-op', v: '(' },
+          { t: 's-string', v: '"cat /logs/"' },
+          { t: 's-op', v: ' + ' },
+          { t: 's-var', v: 'filename' },
+          { t: 's-op', v: ')  ' },
+          { t: 's-comment', v: '# ← Peligro' }
+        ]},
+        { t: '', v: '' },
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'return ' },
+          { t: 's-func', v: 'render' },
+          { t: 's-op', v: '(' },
+          { t: 's-string', v: '"log_view.html"' },
+          { t: 's-op', v: ')' }
+        ]}
+      ]}
+    ],
+    options: [
+      { letter: 'A', text: 'Falta importar el módulo subprocess en lugar de os' },
+      { letter: 'B', text: 'Inyección de comandos: input no validado ejecutado directamente en el sistema', correct: true },
+      { letter: 'C', text: 'El path /logs/ está mal formado y debería ser absoluto' },
+      { letter: 'D', text: 'Falta manejo de excepciones con try/except' }
+    ],
+    hint: '¿Qué pasaría si filename fuera: "app.log; cat /etc/passwd"? El carácter ";" encadena comandos en bash.',
+    explanation: 'Al concatenar directamente el input del usuario en <code>os.system()</code>, un atacante puede inyectar comandos del sistema operativo. Con <code>filename = "app.log; rm -rf /</code>" se ejecutarían ambos comandos encadenados.',
+    fix: '<strong>Solución:</strong> Validar el input con una whitelist y usar subprocess con listas:<br><code>import re, subprocess<br>if not re.match(r"^[a-zA-Z0-9._-]+$", filename): return error<br>result = subprocess.run(["cat", f"/logs/{filename}"], capture_output=True)</code>'
+  },
+
+  /* ── LEVEL 5: Insecure Hashing ── */
+  {
+    level: 5,
+    title: "Almacenamiento de Contraseñas",
+    difficulty: "intermedio",
+    diffLabel: "Intermedio",
+    question: "¿Qué fallo de seguridad tiene este sistema de almacenamiento de contraseñas?",
+    code: [
+      { t: 's-keyword', v: 'import ' },
+      { t: 's-var', v: 'hashlib' },
+      { t: '', v: '' },
+      { t: 'line', v: [
+        { t: 's-keyword', v: 'def ' },
+        { t: 's-func', v: 'hash_password' },
+        { t: 's-op', v: '(password):' }
+      ]},
+      { t: 'indent', v: [
+        { t: 's-comment', v: '    # Generar hash de la contraseña' },
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'return ' },
+          { t: 's-var', v: 'hashlib' },
+          { t: 's-op', v: '.' },
+          { t: 's-vuln', v: 'md5' },
+          { t: 's-op', v: '(' },
+          { t: 's-var', v: 'password' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'encode' },
+          { t: 's-op', v: '()' },
+          { t: 's-op', v: ').' },
+          { t: 's-func', v: 'hexdigest' },
+          { t: 's-op', v: '()' }
+        ]}
+      ]},
+      { t: '', v: '' },
+      { t: 'line', v: [
+        { t: 's-keyword', v: 'def ' },
+        { t: 's-func', v: 'verify_password' },
+        { t: 's-op', v: '(password, stored_hash):' }
+      ]},
+      { t: 'indent', v: [
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'return ' },
+          { t: 's-func', v: 'hash_password' },
+          { t: 's-op', v: '(' },
+          { t: 's-var', v: 'password' },
+          { t: 's-op', v: ') == ' },
+          { t: 's-var', v: 'stored_hash' }
+        ]}
+      ]},
+      { t: '', v: '' },
+      { t: 's-comment', v: '# En la BD: hash_password("123456") → "e10adc3949ba59abbe56e057f20f883e"' }
+    ],
+    options: [
+      { letter: 'A', text: 'Falta añadir sal (salt) aleatoria antes del hash' },
+      { letter: 'B', text: 'MD5 es un algoritmo criptográficamente roto e inseguro para contraseñas', correct: true },
+      { letter: 'C', text: 'La función hash_password no retorna el valor correctamente' },
+      { letter: 'D', text: 'Falta importar bcrypt para el hash seguro' }
+    ],
+    hint: 'MD5 produce siempre el mismo hash para la misma entrada. Con tablas rainbow precalculadas, invertir "e10adc3949ba59abbe56e057f20f883e" lleva menos de 1 segundo.',
+    explanation: 'MD5 es un algoritmo diseñado para velocidad, no para seguridad de contraseñas. Está criptográficamente roto (colisiones conocidas), es extremadamente rápido (permite billones de intentos/segundo con GPU) y no incluye sal por defecto. Las bases de datos robadas con MD5 se crackean en horas.',
+    fix: '<strong>Solución:</strong> Usar un algoritmo diseñado para contraseñas como bcrypt, Argon2 o PBKDF2:<br><code>import bcrypt<br>hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt())<br>bcrypt.checkpw(password.encode(), hash)  # Verificar</code>'
+  },
+
+  /* ── LEVEL 6: Path Traversal ── */
+  {
+    level: 6,
+    title: "Servidor de Archivos Node.js",
+    difficulty: "intermedio",
+    diffLabel: "Intermedio",
+    question: "¿Qué vulnerabilidad permite a un atacante leer archivos fuera del directorio permitido?",
+    code: [
+      { t: 's-keyword', v: 'const ' },
+      { t: 's-var', v: 'express' },
+      { t: 's-op', v: ' = ' },
+      { t: 's-func', v: 'require' },
+      { t: 's-op', v: "(" },
+      { t: 's-string', v: "'express'" },
+      { t: 's-op', v: ');' },
+      { t: '', v: '' },
+      { t: 'line', v: [
+        { t: 's-var', v: 'app' },
+        { t: 's-op', v: '.' },
+        { t: 's-func', v: 'get' },
+        { t: 's-op', v: "(" },
+        { t: 's-string', v: "'/file'" },
+        { t: 's-op', v: ', (req, res) => {' }
+      ]},
+      { t: 'indent', v: [
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'const ' },
+          { t: 's-var', v: 'filename' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'req' },
+          { t: 's-op', v: '.' },
+          { t: 's-var', v: 'query' },
+          { t: 's-op', v: '.' },
+          { t: 's-var', v: 'name' },
+          { t: 's-op', v: ';' }
+        ]},
+        { t: '', v: '' },
+        { t: 's-comment', v: '  // Servir el archivo solicitado' },
+        { t: 'line', v: [
+          { t: 's-var', v: 'res' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'sendFile' },
+          { t: 's-op', v: '(' },
+          { t: 's-vuln', v: "'/var/www/files/' + filename" },
+          { t: 's-op', v: ');  ' },
+          { t: 's-comment', v: '// ← Vulnerable' }
+        ]}
+      ]},
+      { t: 's-op', v: '});' },
+      { t: '', v: '' },
+      { t: 's-comment', v: '// Ataque: GET /file?name=../../etc/passwd' }
+    ],
+    options: [
+      { letter: 'A', text: 'Falta añadir middleware de autenticación antes del endpoint' },
+      { letter: 'B', text: 'Path Traversal: permite acceder a archivos fuera del directorio /var/www/files/', correct: true },
+      { letter: 'C', text: 'El puerto del servidor no está configurado correctamente' },
+      { letter: 'D', text: 'Falta el callback de error como tercer parámetro de sendFile' }
+    ],
+    hint: '¿Qué representa "../" en una ruta de sistema de archivos? Intenta trazar la ruta: /var/www/files/ + ../../etc/passwd',
+    explanation: 'Al concatenar directamente el input en una ruta de archivo, un atacante puede usar secuencias como <code>../../etc/passwd</code> para "navegar" fuera del directorio seguro y leer cualquier archivo del sistema al que tenga acceso el proceso web.',
+    fix: '<strong>Solución:</strong> Usar path.resolve() y verificar que la ruta resultante esté dentro del directorio base:<br><code>const path = require("path");<br>const base = "/var/www/files";<br>const resolved = path.resolve(base, filename);<br>if (!resolved.startsWith(base)) return res.status(403).send("Prohibido");<br>res.sendFile(resolved);</code>'
+  },
+
+  /* ── LEVEL 7: IDOR ── */
+  {
+    level: 7,
+    title: "API de Datos de Usuario",
+    difficulty: "avanzado",
+    diffLabel: "Avanzado",
+    question: "Esta API REST devuelve datos de usuario. ¿Qué fallo de control de acceso tiene?",
+    code: [
+      { t: 's-comment', v: '# API Flask - Datos de usuario' },
+      { t: '', v: '' },
+      { t: 'line', v: [
+        { t: 's-op', v: '@' },
+        { t: 's-var', v: 'app' },
+        { t: 's-op', v: '.' },
+        { t: 's-func', v: 'route' },
+        { t: 's-op', v: '(' },
+        { t: 's-string', v: "'/api/user/data'" },
+        { t: 's-op', v: ', methods=[' },
+        { t: 's-string', v: "'GET'" },
+        { t: 's-op', v: '])' }
+      ]},
+      { t: 'line', v: [
+        { t: 's-op', v: '@' },
+        { t: 's-func', v: 'login_required' }
+      ]},
+      { t: 'line', v: [
+        { t: 's-keyword', v: 'def ' },
+        { t: 's-func', v: 'get_user_data' },
+        { t: 's-op', v: '():' }
+      ]},
+      { t: 'indent', v: [
+        { t: 's-comment', v: '    # Obtener ID del parámetro de la URL' },
+        { t: 'line', v: [
+          { t: 's-var', v: 'user_id' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'request' },
+          { t: 's-op', v: '.' },
+          { t: 's-var', v: 'args' },
+          { t: 's-op', v: ".get(" },
+          { t: 's-string', v: "'id'" },
+          { t: 's-op', v: ')  ' },
+          { t: 's-comment', v: '# ← Peligro' }
+        ]},
+        { t: '', v: '' },
+        { t: 's-comment', v: '    # Sin verificar si el usuario tiene permiso para ver ese ID' },
+        { t: 'line', v: [
+          { t: 's-vuln', v: 'user' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'db' },
+          { t: 's-op', v: '.' },
+          { t: 's-func', v: 'query' },
+          { t: 's-op', v: '(f"SELECT * FROM users WHERE id={user_id}")' }
+        ]},
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'return ' },
+          { t: 's-func', v: 'jsonify' },
+          { t: 's-op', v: '(' },
+          { t: 's-var', v: 'user' },
+          { t: 's-op', v: ')' }
+        ]},
+        { t: '', v: '' },
+        { t: 's-comment', v: '    # Un usuario autenticado puede ver datos de CUALQUIER usuario' },
+        { t: 's-comment', v: '    # /api/user/data?id=1  (admin)' },
+        { t: 's-comment', v: '    # /api/user/data?id=2  (otro usuario)' }
+      ]}
+    ],
+    options: [
+      { letter: 'A', text: 'Falta cifrar la respuesta JSON con TLS' },
+      { letter: 'B', text: 'IDOR: no se verifica que el usuario autenticado tenga permiso para acceder al ID solicitado', correct: true },
+      { letter: 'C', text: 'El nombre del endpoint /api/user/data debería incluir el ID en la URL' },
+      { letter: 'D', text: 'Falta manejar el caso en que db.query retorne None' }
+    ],
+    hint: 'La función tiene @login_required (el usuario está autenticado), pero eso no significa que pueda ver los datos de CUALQUIER usuario. ¿Qué falta comprobar?',
+    explanation: 'El ataque IDOR (Insecure Direct Object Reference) ocurre cuando la aplicación usa un ID controlable por el usuario para acceder a recursos sin verificar que tiene permiso. Un usuario con sesión válida puede iterar IDs (1, 2, 3...) y obtener datos de todos los demás usuarios.',
+    fix: '<strong>Solución:</strong> Verificar siempre que el ID solicitado pertenece al usuario autenticado:<br><code>current_user = get_current_user()  # Del token JWT<br>if str(current_user.id) != user_id and not current_user.is_admin:<br>    return jsonify({"error": "No autorizado"}), 403</code>'
+  },
+
+  /* ── LEVEL 8: JWT None Algorithm ── */
+  {
+    level: 8,
+    title: "Verificación de Tokens JWT",
+    difficulty: "avanzado",
+    diffLabel: "Avanzado",
+    question: "¿Qué fallo crítico de autenticación contiene esta implementación de JWT en Node.js?",
+    code: [
+      { t: 's-keyword', v: 'const ' },
+      { t: 's-var', v: 'jwt' },
+      { t: 's-op', v: ' = ' },
+      { t: 's-func', v: 'require' },
+      { t: 's-op', v: "(" },
+      { t: 's-string', v: "'jsonwebtoken'" },
+      { t: 's-op', v: ');' },
+      { t: '', v: '' },
+      { t: 's-comment', v: '// Middleware de verificación de token' },
+      { t: 'line', v: [
+        { t: 's-keyword', v: 'function ' },
+        { t: 's-func', v: 'verifyToken' },
+        { t: 's-op', v: '(token) {' }
+      ]},
+      { t: 'indent', v: [
+        { t: 's-comment', v: '  // PROBLEMA: decode() no valida la firma' },
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'const ' },
+          { t: 's-var', v: 'decoded' },
+          { t: 's-op', v: ' = ' },
+          { t: 's-var', v: 'jwt' },
+          { t: 's-op', v: '.' },
+          { t: 's-vuln', v: 'decode' },
+          { t: 's-op', v: '(' },
+          { t: 's-var', v: 'token' },
+          { t: 's-op', v: ');  ' },
+          { t: 's-comment', v: '// ← Vulnerable' }
+        ]},
+        { t: '', v: '' },
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'if ' },
+          { t: 's-op', v: '(' },
+          { t: 's-var', v: 'decoded' },
+          { t: 's-op', v: '.' },
+          { t: 's-var', v: 'role' },
+          { t: 's-op', v: ' === ' },
+          { t: 's-string', v: "'admin'" },
+          { t: 's-op', v: ') {' }
+        ]},
+        { t: 'indent2', v: [
+          { t: 's-keyword', v: 'return ' },
+          { t: 's-keyword', v: 'true' },
+          { t: 's-op', v: ';' }
+        ]},
+        { t: 's-op', v: '  }' },
+        { t: 'line', v: [
+          { t: 's-keyword', v: 'return ' },
+          { t: 's-keyword', v: 'false' },
+          { t: 's-op', v: ';' }
+        ]}
+      ]},
+      { t: 's-op', v: '}' },
+      { t: '', v: '' },
+      { t: 's-comment', v: '// Ataque: crear JWT con alg:"none" y role:"admin"' },
+      { t: 's-comment', v: '// sin firma → jwt.decode() lo acepta!' }
+    ],
+    options: [
+      { letter: 'A', text: 'La función verifyToken debería tener un bloque try-catch para manejar errores' },
+      { letter: 'B', text: 'jwt.decode() no valida la firma criptográfica del token; usar jwt.verify() con la clave secreta', correct: true },
+      { letter: 'C', text: 'Falta añadir middleware de Express antes de llamar a verifyToken' },
+      { letter: 'D', text: 'El campo role debería ser un número entero en lugar de string' }
+    ],
+    hint: 'Hay dos funciones en la librería jsonwebtoken: decode() y verify(). ¿Cuál diferencia hay entre ambas? ¿Qué es el "none algorithm attack" en JWT?',
+    explanation: '<code>jwt.decode()</code> solo decodifica el token Base64 sin verificar si la firma criptográfica es válida. Un atacante puede crear un token con <code>{"alg":"none"}</code> y poner <code>{"role":"admin"}</code> en el payload sin necesitar la clave secreta, obteniendo acceso de administrador.',
+    fix: '<strong>Solución:</strong> Siempre usar <code>jwt.verify()</code> con la clave secreta y especificar los algoritmos permitidos:<br><code>const decoded = jwt.verify(token, process.env.JWT_SECRET, {<br>  algorithms: ["HS256"]  // Nunca permitir "none"<br>});</code>'
+  }
+];
+
+/* ============================================================
+   GAME STATE
+   ============================================================ */
+let currentLevel  = 0;
+let score         = 0;
+let correctCount  = 0;
+let totalHints    = 0;
+let hintUsedThisLevel = false;
+let answered      = false;
+
+// Load from localStorage
+function loadProgress() {
+  try {
+    const saved = JSON.parse(localStorage.getItem('vuln_game') || '{}');
+    if (saved.score !== undefined) {
+      score        = saved.score;
+      correctCount = saved.correctCount || 0;
+      totalHints   = saved.totalHints  || 0;
+      currentLevel = saved.currentLevel || 0;
+      if (currentLevel >= challenges.length) currentLevel = 0;
+    }
+  } catch(e) {}
+}
+
+function saveProgress() {
+  localStorage.setItem('vuln_game', JSON.stringify({ score, correctCount, totalHints, currentLevel }));
+}
+
+/* ============================================================
+   CODE RENDERER
+   ============================================================ */
+function renderCode(code, indent = 0) {
+  let html = '';
+  const pad = '    '.repeat(indent);
+  code.forEach(node => {
+    if (typeof node === 'string') {
+      html += pad + node + '\n';
+      return;
+    }
+    switch (node.t) {
+      case 'indent':
+        html += renderCode(node.v, indent + 1);
+        break;
+      case 'indent2':
+        html += renderCode([{t:'line', v: Array.isArray(node.v) ? node.v : [{t:'',v:node.v}]}], indent + 2);
+        break;
+      case 'line':
+        html += pad;
+        if (Array.isArray(node.v)) {
+          node.v.forEach(part => {
+            if (part.t) html += `<span class="${part.t}">${escHtml(part.v)}</span>`;
+            else html += escHtml(part.v);
+          });
+        } else {
+          html += escHtml(node.v);
+        }
+        html += '\n';
+        break;
+      case '':
+        html += '\n';
+        break;
+      default:
+        if (node.v === '') { html += '\n'; break; }
+        html += pad + `<span class="${node.t}">${escHtml(node.v)}</span>` + '\n';
+    }
+  });
+  return html;
+}
+
+function escHtml(str) {
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;');
+}
+
+/* ============================================================
+   RENDER CHALLENGE
+   ============================================================ */
+function renderChallenge() {
+  if (currentLevel >= challenges.length) {
+    showFinalScreen();
+    return;
+  }
+
+  const ch = challenges[currentLevel];
+  answered = false;
+  hintUsedThisLevel = false;
+
+  // Scoreboard
+  updateScoreboard();
+
+  // Level progress
+  document.getElementById('levelTitle').textContent = `Nivel ${ch.level}: ${ch.title}`;
+  document.getElementById('diffBadge').className = `diff-badge diff-${ch.difficulty}`;
+  document.getElementById('diffBadge').textContent = ch.diffLabel;
+  document.getElementById('levelSteps').textContent = `${ch.level} de ${challenges.length}`;
+  document.getElementById('progressBar').style.width = `${((currentLevel) / challenges.length) * 100}%`;
+
+  // Question
+  document.getElementById('challengeQuestion').textContent = ch.question;
+
+  // Code
+  document.getElementById('codeBlock').innerHTML = renderCode(ch.code);
+
+  // Options
+  const optGrid = document.getElementById('optionsGrid');
+  optGrid.innerHTML = '';
+  ch.options.forEach(opt => {
+    const btn = document.createElement('button');
+    btn.className = 'option-btn';
+    btn.innerHTML = `<span class="opt-letter">${opt.letter})</span><span>${escHtml(opt.text)}</span>`;
+    btn.onclick = () => selectAnswer(opt, btn);
+    optGrid.appendChild(btn);
+  });
+
+  // Reset UI
+  document.getElementById('explanationBox').classList.remove('show');
+  document.getElementById('hintBox').classList.remove('show');
+  document.getElementById('hintBox').textContent = '';
+  document.getElementById('nextBtn').style.display = 'none';
+  document.getElementById('retryBtn').style.display = 'none';
+  document.getElementById('hintBtn').disabled = false;
+  document.getElementById('challengeCard').className = 'challenge-card';
+  document.getElementById('finalScreen').style.display = 'none';
+  document.getElementById('challengeCard').style.display = '';
+}
+
+/* ============================================================
+   ANSWER SELECTION
+   ============================================================ */
+function selectAnswer(opt, clickedBtn) {
+  if (answered) return;
+  answered = true;
+
+  const ch = challenges[currentLevel];
+  const allBtns = document.querySelectorAll('.option-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  if (opt.correct) {
+    // Correct!
+    clickedBtn.classList.add('correct');
+    const pts = hintUsedThisLevel ? 90 : 100;
+    score += pts;
+    correctCount++;
+    document.getElementById('challengeCard').classList.add('flash-green');
+    showToast(`+${pts} puntos ✓`, 'green');
+    showExplanation(true, ch);
+    document.getElementById('nextBtn').style.display = '';
+  } else {
+    // Wrong
+    clickedBtn.classList.add('wrong');
+    // Highlight correct answer
+    allBtns.forEach(b => {
+      const letter = b.querySelector('.opt-letter').textContent.replace(')', '');
+      const original = ch.options.find(o => o.letter === letter);
+      if (original && original.correct) b.classList.add('correct');
+    });
+    document.getElementById('challengeCard').classList.add('flash-red');
+    showToast('Incorrecto ✗', 'red');
+    showExplanation(false, ch);
+    document.getElementById('retryBtn').style.display = '';
+    document.getElementById('nextBtn').style.display = '';
+  }
+
+  updateScoreboard();
+  saveProgress();
+}
+
+function showExplanation(isCorrect, ch) {
+  const box   = document.getElementById('explanationBox');
+  const title = document.getElementById('explTitle');
+  const body  = document.getElementById('explBody');
+  const fix   = document.getElementById('explFix');
+
+  if (isCorrect) {
+    title.className = 'expl-title correct-t';
+    title.textContent = '✅ ¡Correcto! ' + ch.options.find(o => o.correct).text;
+  } else {
+    title.className = 'expl-title wrong-t';
+    title.textContent = '❌ Incorrecto';
+  }
+
+  body.innerHTML = ch.explanation;
+  fix.innerHTML  = ch.fix;
+  box.classList.add('show');
+}
+
+/* ============================================================
+   HINT
+   ============================================================ */
+function useHint() {
+  if (hintUsedThisLevel) return;
+  hintUsedThisLevel = true;
+  totalHints++;
+  const hintBox = document.getElementById('hintBox');
+  hintBox.textContent = '💡 Pista: ' + challenges[currentLevel].hint;
+  hintBox.classList.add('show');
+  document.getElementById('hintBtn').disabled = true;
+  document.getElementById('hintBtn').textContent = '💡 Pista usada';
+  updateScoreboard();
+}
+
+/* ============================================================
+   NAVIGATION
+   ============================================================ */
+function nextLevel() {
+  currentLevel++;
+  saveProgress();
+  if (currentLevel >= challenges.length) {
+    showFinalScreen();
+  } else {
+    renderChallenge();
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+}
+
+function retryLevel() {
+  renderChallenge();
+}
+
+/* ============================================================
+   SCOREBOARD
+   ============================================================ */
+function updateScoreboard() {
+  document.getElementById('scoreDisplay').textContent = score;
+  document.getElementById('levelDisplay').textContent = `${Math.min(currentLevel + 1, challenges.length)} / ${challenges.length}`;
+  document.getElementById('correctDisplay').textContent = correctCount;
+  document.getElementById('hintsDisplay').textContent = totalHints;
+}
+
+/* ============================================================
+   FINAL SCREEN
+   ============================================================ */
+function showFinalScreen() {
+  document.getElementById('challengeCard').style.display = 'none';
+  const fs = document.getElementById('finalScreen');
+  fs.style.display = 'block';
+
+  // Update progress bar to 100%
+  document.getElementById('progressBar').style.width = '100%';
+
+  // Calculate rank
+  let emoji, title, rank;
+  if (score >= 750) {
+    emoji = '🏆'; title = '¡Maestro de la Seguridad!'; rank = 'Experto en Seguridad';
+  } else if (score >= 600) {
+    emoji = '🥇'; title = '¡Excelente Trabajo!'; rank = 'Ethical Hacker';
+  } else if (score >= 400) {
+    emoji = '🥈'; title = '¡Buen Trabajo!'; rank = 'Script Kiddie Avanzado';
+  } else {
+    emoji = '🎓'; title = '¡Sigue Aprendiendo!'; rank = 'Hacker Novato';
+  }
+
+  document.getElementById('finalEmoji').textContent   = emoji;
+  document.getElementById('finalTitle').textContent    = title;
+  document.getElementById('finalRank').textContent     = `Rango: ${rank}`;
+  document.getElementById('finalScore').textContent    = score;
+  document.getElementById('finalCorrect').textContent  = `${correctCount}/8`;
+  document.getElementById('finalHints').textContent    = totalHints;
+
+  // Save final score
+  try {
+    const history = JSON.parse(localStorage.getItem('vuln_history') || '[]');
+    history.push({ score, correctCount, totalHints, date: new Date().toISOString(), rank });
+    localStorage.setItem('vuln_history', JSON.stringify(history.slice(-10)));
+  } catch(e) {}
+
+  localStorage.removeItem('vuln_game');
+}
+
+function restartGame() {
+  score        = 0;
+  correctCount = 0;
+  totalHints   = 0;
+  currentLevel = 0;
+  localStorage.removeItem('vuln_game');
+  renderChallenge();
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+
+/* ============================================================
+   TOAST
+   ============================================================ */
+function showToast(msg, type) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = `toast ${type} show`;
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+/* ============================================================
+   AUTH HELPERS
+   ============================================================ */
+function logout() {
+  if (window.Auth && typeof window.Auth.logout === 'function') {
+    window.Auth.logout();
+  } else {
+    localStorage.removeItem('cyberlearn_session');
+    localStorage.removeItem('cybersec_user');
+    window.location.href = 'index.html';
+  }
+}
+
+(function initUser() {
+  if (window.Auth && !window.Auth.isLoggedIn()) {
+    window.location.href = 'index.html';
+    return;
+  }
+  const session = window.Auth ? window.Auth.getSession() : null;
+  const username = session ? session.username : 'Hacker';
+  const el = document.getElementById('navUsername');
+  if (el) el.textContent = '👤 ' + username;
+})();
+
+/* ============================================================
+   INIT
+   ============================================================ */
+loadProgress();
+renderChallenge();
+</script>
+</body>
+</html>

@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="CyberLearn – Aprende ciberseguridad de forma interactiva. Accede o crea tu cuenta." />
+  <title>CyberLearn – Iniciar Sesión</title>
+
+  <!-- Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Share+Tech+Mono&display=swap" rel="stylesheet" />
+
+  <!-- Hoja de estilos principal -->
+  <link rel="stylesheet" href="css/style.css" />
+
+  <style>
+    /* ---- Estilos específicos de la página de auth ---- */
+
+    /* Canvas Matrix de fondo */
+    #matrix-canvas {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      opacity: 0.18;
+    }
+
+    /* Overlay degradado sobre el canvas */
+    .matrix-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 0;
+      background: radial-gradient(ellipse at center,
+        rgba(10,14,26,0.5)  0%,
+        rgba(10,14,26,0.85) 60%,
+        rgba(10,14,26,0.97) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Wrapper principal: centra la tarjeta */
+    .auth-wrapper {
+      position: relative;
+      z-index: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      padding: 2rem 1rem;
+    }
+
+    .auth-card {
+      width: 100%;
+      max-width: 440px;
+      animation: cardEntrance 0.6s ease both;
+    }
+
+    @keyframes cardEntrance {
+      from { opacity: 0; transform: translateY(30px) scale(0.97); }
+      to   { opacity: 1; transform: translateY(0)   scale(1); }
+    }
+
+    /* Logo */
+    .auth-logo {
+      text-align: center;
+      margin-bottom: 1.75rem;
+    }
+
+    .logo-icon {
+      font-size: 3rem;
+      display: block;
+      margin-bottom: 0.5rem;
+      filter: drop-shadow(0 0 12px rgba(0,255,65,0.6));
+      animation: iconPulse 3s ease-in-out infinite;
+    }
+
+    @keyframes iconPulse {
+      0%,100% { filter: drop-shadow(0 0 10px rgba(0,255,65,0.5)); }
+      50%      { filter: drop-shadow(0 0 22px rgba(0,255,65,0.9)); }
+    }
+
+    .logo-title {
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--accent-green);
+      text-shadow: 0 0 10px var(--accent-green), 0 0 25px rgba(0,255,65,0.4);
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      display: block;
+      margin-bottom: 0.3rem;
+    }
+
+    .logo-subtitle {
+      font-size: 0.82rem;
+      color: var(--text-secondary);
+      margin: 0;
+      letter-spacing: 0.5px;
+    }
+
+    /* Separador decorativo */
+    .deco-line {
+      height: 1px;
+      background: linear-gradient(90deg, transparent, var(--accent-green), transparent);
+      margin: 1.25rem 0;
+      opacity: 0.5;
+    }
+
+    /* Demo hint */
+    .demo-hint {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.5rem;
+      background: rgba(0,255,65,0.05);
+      border: 1px solid rgba(0,255,65,0.2);
+      border-radius: 4px;
+      padding: 0.65rem 0.9rem;
+      margin-bottom: 1.2rem;
+      font-size: 0.78rem;
+      color: var(--accent-green);
+      line-height: 1.6;
+    }
+
+    .demo-hint .demo-icon {
+      font-size: 1rem;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+
+    /* Strength bar */
+    .password-strength {
+      margin-top: 0.4rem;
+    }
+
+    /* Separador "o" entre formulario y demo */
+    .or-divider {
+      text-align: center;
+      position: relative;
+      margin: 1rem 0;
+    }
+
+    .or-divider::before,
+    .or-divider::after {
+      content: '';
+      position: absolute;
+      top: 50%;
+      width: 42%;
+      height: 1px;
+      background: var(--border);
+    }
+    .or-divider::before { left: 0; }
+    .or-divider::after  { right: 0; }
+
+    .or-text {
+      display: inline-block;
+      position: relative;
+      z-index: 1;
+      background: var(--bg-card);
+      padding: 0 0.5rem;
+      font-size: 0.75rem;
+      color: var(--text-secondary);
+    }
+
+    /* Alert container */
+    #alert-container {
+      min-height: 0;
+    }
+
+    /* Versión responsive extra para pantallas muy pequeñas */
+    @media (max-width: 400px) {
+      .logo-title { font-size: 1.6rem; }
+      .auth-card  { padding: 1.25rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- ============================================================
+     Canvas: Lluvia Matrix de fondo
+============================================================ -->
+<canvas id="matrix-canvas" aria-hidden="true"></canvas>
+<div class="matrix-overlay" aria-hidden="true"></div>
+
+<!-- ============================================================
+     Tarjeta de autenticación
+============================================================ -->
+<div class="auth-wrapper">
+  <div class="auth-card card">
+
+    <!-- Logo -->
+    <div class="auth-logo">
+      <span class="logo-icon" role="img" aria-label="Escudo">🛡️</span>
+      <span class="logo-title glow-green typewriter" id="logo-text">CyberLearn</span>
+      <p class="logo-subtitle">Aprende ciberseguridad de forma interactiva</p>
+    </div>
+
+    <div class="deco-line"></div>
+
+    <!-- Contenedor de alertas -->
+    <div id="alert-container"></div>
+
+    <!-- ---- Tabs ---- -->
+    <div class="tabs" role="tablist" aria-label="Modos de acceso">
+      <button class="tab-btn active"
+              id="tab-login"
+              role="tab"
+              aria-selected="true"
+              aria-controls="panel-login"
+              onclick="switchTab('login')">
+        🔐 Iniciar Sesión
+      </button>
+      <button class="tab-btn"
+              id="tab-register"
+              role="tab"
+              aria-selected="false"
+              aria-controls="panel-register"
+              onclick="switchTab('register')">
+        ✨ Registrarse
+      </button>
+    </div>
+
+    <!-- ==================================================
+         PANEL: Iniciar Sesión
+    ================================================== -->
+    <div id="panel-login" class="tab-panel active" role="tabpanel" aria-labelledby="tab-login">
+
+      <!-- Pista de usuario demo -->
+      <div class="demo-hint">
+        <span class="demo-icon">💡</span>
+        <div>
+          <strong>Acceso demo:</strong><br/>
+          Usuario: <code>demo</code> &nbsp;|&nbsp; Contraseña: <code>Demo1234!</code>
+        </div>
+      </div>
+
+      <form id="login-form" novalidate onsubmit="handleLogin(event)">
+
+        <!-- Usuario o Email -->
+        <div class="form-group">
+          <label for="login-user">Usuario o Email <span class="required" aria-hidden="true">*</span></label>
+          <input
+            type="text"
+            id="login-user"
+            name="usernameOrEmail"
+            class="form-control"
+            placeholder="tu_usuario o email@ejemplo.com"
+            autocomplete="username"
+            required
+            aria-required="true"
+          />
+          <span class="invalid-feedback" id="login-user-err"></span>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="form-group">
+          <label for="login-password">Contraseña <span class="required" aria-hidden="true">*</span></label>
+          <div class="input-group">
+            <input
+              type="password"
+              id="login-password"
+              name="password"
+              class="form-control"
+              placeholder="••••••••"
+              autocomplete="current-password"
+              required
+              aria-required="true"
+            />
+            <button type="button"
+                    class="input-icon"
+                    id="toggle-login-pass"
+                    aria-label="Mostrar/ocultar contraseña"
+                    onclick="togglePassword('login-password', 'toggle-login-pass')">
+              👁
+            </button>
+          </div>
+          <span class="invalid-feedback" id="login-pass-err"></span>
+        </div>
+
+        <!-- Botón submit -->
+        <button type="submit" id="login-btn" class="btn btn-primary btn-block btn-lg mt-2">
+          <span id="login-btn-text">Iniciar Sesión</span>
+          <span id="login-spinner" class="spinner spinner-sm" style="display:none;" aria-hidden="true"></span>
+        </button>
+
+      </form>
+
+      <div class="or-divider mt-3"><span class="or-text">¿No tienes cuenta?</span></div>
+
+      <button type="button" class="btn btn-ghost btn-block" onclick="switchTab('register')">
+        Crear cuenta gratis →
+      </button>
+    </div>
+
+    <!-- ==================================================
+         PANEL: Registrarse
+    ================================================== -->
+    <div id="panel-register" class="tab-panel" role="tabpanel" aria-labelledby="tab-register">
+
+      <form id="register-form" novalidate onsubmit="handleRegister(event)">
+
+        <!-- Nombre de usuario -->
+        <div class="form-group">
+          <label for="reg-username">Nombre de usuario <span class="required" aria-hidden="true">*</span></label>
+          <input
+            type="text"
+            id="reg-username"
+            name="username"
+            class="form-control"
+            placeholder="tu_usuario"
+            maxlength="20"
+            autocomplete="username"
+            required
+            aria-required="true"
+            oninput="validateUsernameField(this)"
+          />
+          <span class="invalid-feedback" id="reg-username-err"></span>
+        </div>
+
+        <!-- Email -->
+        <div class="form-group">
+          <label for="reg-email">Correo electrónico <span class="required" aria-hidden="true">*</span></label>
+          <input
+            type="email"
+            id="reg-email"
+            name="email"
+            class="form-control"
+            placeholder="email@ejemplo.com"
+            autocomplete="email"
+            required
+            aria-required="true"
+            oninput="validateEmailField(this)"
+          />
+          <span class="invalid-feedback" id="reg-email-err"></span>
+        </div>
+
+        <!-- Contraseña -->
+        <div class="form-group">
+          <label for="reg-password">Contraseña <span class="required" aria-hidden="true">*</span></label>
+          <div class="input-group">
+            <input
+              type="password"
+              id="reg-password"
+              name="password"
+              class="form-control"
+              placeholder="Mín. 8 chars, 1 mayúscula, 1 número, 1 especial"
+              autocomplete="new-password"
+              required
+              aria-required="true"
+              oninput="onPasswordInput(this)"
+            />
+            <button type="button"
+                    class="input-icon"
+                    id="toggle-reg-pass"
+                    aria-label="Mostrar/ocultar contraseña"
+                    onclick="togglePassword('reg-password', 'toggle-reg-pass')">
+              👁
+            </button>
+          </div>
+          <span class="invalid-feedback" id="reg-pass-err"></span>
+
+          <!-- Barra de fortaleza -->
+          <div class="password-strength" id="pass-strength-wrapper" style="display:none;" aria-live="polite">
+            <div class="strength-bar">
+              <div class="strength-fill" id="strength-fill"></div>
+            </div>
+            <span class="strength-label" id="strength-label"></span>
+          </div>
+        </div>
+
+        <!-- Confirmar contraseña -->
+        <div class="form-group">
+          <label for="reg-confirm">Confirmar contraseña <span class="required" aria-hidden="true">*</span></label>
+          <div class="input-group">
+            <input
+              type="password"
+              id="reg-confirm"
+              name="confirmPassword"
+              class="form-control"
+              placeholder="Repite tu contraseña"
+              autocomplete="new-password"
+              required
+              aria-required="true"
+              oninput="validateConfirmField(this)"
+            />
+            <button type="button"
+                    class="input-icon"
+                    id="toggle-reg-confirm"
+                    aria-label="Mostrar/ocultar contraseña"
+                    onclick="togglePassword('reg-confirm', 'toggle-reg-confirm')">
+              👁
+            </button>
+          </div>
+          <span class="invalid-feedback" id="reg-confirm-err"></span>
+        </div>
+
+        <!-- Botón submit -->
+        <button type="submit" id="reg-btn" class="btn btn-primary btn-block btn-lg mt-2">
+          <span id="reg-btn-text">Crear Cuenta</span>
+          <span id="reg-spinner" class="spinner spinner-sm" style="display:none;" aria-hidden="true"></span>
+        </button>
+
+      </form>
+
+      <div class="or-divider mt-3"><span class="or-text">¿Ya tienes cuenta?</span></div>
+
+      <button type="button" class="btn btn-ghost btn-block" onclick="switchTab('login')">
+        ← Iniciar sesión
+      </button>
+    </div>
+
+    <!-- Footer de la tarjeta -->
+    <div class="deco-line"></div>
+    <p class="text-center mb-0" style="font-size:0.72rem; color:var(--text-secondary);">
+      🔒 Proyecto educativo · Ningún dato real es transmitido
+    </p>
+
+  </div><!-- /.auth-card -->
+</div><!-- /.auth-wrapper -->
+
+<!-- ============================================================
+     Scripts
+============================================================ -->
+<script src="js/auth.js"></script>
+<script>
+/* ================================================================
+   Matrix Rain Canvas
+================================================================ */
+(function initMatrixRain() {
+  const canvas  = document.getElementById('matrix-canvas');
+  const ctx     = canvas.getContext('2d');
+
+  // Caracteres Matrix (katakana + símbolos + números)
+  const CHARS = 'アイウエオカキクケコサシスセソタチツテトナニヌネノハヒフヘホマミムメモヤユヨラリルレロワヲン0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!@#$%^&*<>?{}[]';
+  const FONT_SIZE = 14;
+
+  let columns, drops;
+
+  function resize() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    columns = Math.floor(canvas.width / FONT_SIZE);
+    drops   = new Array(columns).fill(1);
+  }
+
+  function draw() {
+    // Fade suave
+    ctx.fillStyle = 'rgba(10,14,26,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+    ctx.font = `${FONT_SIZE}px "Share Tech Mono", "Courier New", monospace`;
+
+    for (let i = 0; i < drops.length; i++) {
+      const char = CHARS[Math.floor(Math.random() * CHARS.length)];
+      const x    = i * FONT_SIZE;
+      const y    = drops[i] * FONT_SIZE;
+
+      // Carácter principal: brillante
+      ctx.fillStyle = '#00ff41';
+      ctx.shadowColor  = '#00ff41';
+      ctx.shadowBlur   = 6;
+      ctx.fillText(char, x, y);
+
+      // Resetear sombra para los caracteres secundarios
+      ctx.shadowBlur = 0;
+
+      // Desvanecer la columna de vez en cuando
+      if (y > canvas.height && Math.random() > 0.975) {
+        drops[i] = 0;
+      }
+      drops[i]++;
+    }
+  }
+
+  resize();
+  window.addEventListener('resize', resize);
+  setInterval(draw, 50);
+})();
+
+/* ================================================================
+   Tabs
+================================================================ */
+function switchTab(tab) {
+  const panels  = ['login', 'register'];
+  const alertEl = document.getElementById('alert-container');
+  if (alertEl) alertEl.innerHTML = '';
+
+  panels.forEach(p => {
+    const btn   = document.getElementById(`tab-${p}`);
+    const panel = document.getElementById(`panel-${p}`);
+    const isActive = p === tab;
+
+    btn.classList.toggle('active', isActive);
+    btn.setAttribute('aria-selected', isActive);
+    panel.classList.toggle('active', isActive);
+  });
+}
+
+/* ================================================================
+   Mostrar / Ocultar contraseña
+================================================================ */
+function togglePassword(inputId, btnId) {
+  const input = document.getElementById(inputId);
+  const btn   = document.getElementById(btnId);
+  if (!input) return;
+
+  if (input.type === 'password') {
+    input.type   = 'text';
+    btn.textContent = '🙈';
+    btn.setAttribute('aria-label', 'Ocultar contraseña');
+  } else {
+    input.type   = 'password';
+    btn.textContent = '👁';
+    btn.setAttribute('aria-label', 'Mostrar contraseña');
+  }
+}
+
+/* ================================================================
+   Alertas
+================================================================ */
+function showAlert(message, type = 'error') {
+  const container = document.getElementById('alert-container');
+  if (!container) return;
+
+  const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
+  const icon  = icons[type] || 'ℹ️';
+
+  container.innerHTML = `
+    <div class="alert alert-${type}" role="alert">
+      <span aria-hidden="true">${icon}</span>
+      <span>${escapeHtml(message)}</span>
+    </div>`;
+
+  // Auto-ocultar mensajes de éxito tras 4 s
+  if (type === 'success') {
+    setTimeout(() => { container.innerHTML = ''; }, 4000);
+  }
+}
+
+function escapeHtml(str) {
+  const div = document.createElement('div');
+  div.textContent = str;
+  return div.innerHTML;
+}
+
+/* ================================================================
+   Validación en tiempo real (registro)
+================================================================ */
+function validateUsernameField(input) {
+  const result = window.Auth.validateUsername(input.value);
+  setFieldState(input, 'reg-username-err', result);
+}
+
+function validateEmailField(input) {
+  const result = window.Auth.validateEmail(input.value);
+  setFieldState(input, 'reg-email-err', result);
+}
+
+function validateConfirmField(input) {
+  const pass    = document.getElementById('reg-password').value;
+  const confirm = input.value;
+  const result  = confirm === pass
+    ? { valid: true, message: '' }
+    : { valid: false, message: 'Las contraseñas no coinciden.' };
+  setFieldState(input, 'reg-confirm-err', result);
+}
+
+function onPasswordInput(input) {
+  const val    = input.value;
+  const wrapper = document.getElementById('pass-strength-wrapper');
+  const fill   = document.getElementById('strength-fill');
+  const label  = document.getElementById('strength-label');
+
+  if (!val) {
+    wrapper.style.display = 'none';
+    input.classList.remove('is-invalid', 'is-valid');
+    return;
+  }
+
+  wrapper.style.display = 'block';
+  const strength = window.Auth.checkPasswordStrength(val);
+
+  fill.className = `strength-fill ${strength}`;
+  label.className = `strength-label ${strength}`;
+
+  const labels = {
+    weak:   '🔴 Débil',
+    medium: '🟡 Media',
+    strong: '🟢 Fuerte',
+  };
+  label.textContent = labels[strength];
+
+  // Marcar campo con validación completa
+  const fullCheck = window.Auth.validatePassword(val);
+  setFieldState(input, 'reg-pass-err', fullCheck);
+}
+
+function setFieldState(input, errId, result) {
+  const errEl = document.getElementById(errId);
+  if (result.valid) {
+    input.classList.remove('is-invalid');
+    input.classList.add('is-valid');
+    if (errEl) errEl.textContent = '';
+  } else {
+    input.classList.remove('is-valid');
+    input.classList.add('is-invalid');
+    if (errEl) errEl.textContent = result.message;
+  }
+}
+
+/* ================================================================
+   Envío: Iniciar Sesión
+================================================================ */
+function handleLogin(event) {
+  event.preventDefault();
+  const form   = event.target;
+  const userEl = document.getElementById('login-user');
+  const passEl = document.getElementById('login-password');
+  const btn    = document.getElementById('login-btn');
+  const btnTxt = document.getElementById('login-btn-text');
+  const spinner= document.getElementById('login-spinner');
+
+  const userVal = userEl.value.trim();
+  const passVal = passEl.value;
+
+  // Validación básica de campos vacíos
+  let valid = true;
+  const userErr = document.getElementById('login-user-err');
+  const passErr = document.getElementById('login-pass-err');
+
+  if (!userVal) {
+    userEl.classList.add('is-invalid');
+    if (userErr) userErr.textContent = 'Este campo es obligatorio.';
+    valid = false;
+  } else {
+    userEl.classList.remove('is-invalid');
+    if (userErr) userErr.textContent = '';
+  }
+
+  if (!passVal) {
+    passEl.classList.add('is-invalid');
+    if (passErr) passErr.textContent = 'Este campo es obligatorio.';
+    valid = false;
+  } else {
+    passEl.classList.remove('is-invalid');
+    if (passErr) passErr.textContent = '';
+  }
+
+  if (!valid) return;
+
+  // Mostrar spinner
+  btn.disabled       = true;
+  btnTxt.textContent = 'Verificando…';
+  spinner.style.display = 'inline-block';
+
+  // Simular latencia de red (UX)
+  setTimeout(() => {
+    const result = window.Auth.login(userVal, passVal);
+
+    btn.disabled       = false;
+    btnTxt.textContent = 'Iniciar Sesión';
+    spinner.style.display = 'none';
+
+    if (result.success) {
+      showAlert(`¡Bienvenido, ${result.user.username}! Redirigiendo…`, 'success');
+      // Efecto de salida antes de redirigir
+      setTimeout(() => {
+        window.location.href = 'dashboard.html';
+      }, 1200);
+    } else {
+      showAlert(result.message, 'error');
+      passEl.value = '';
+    }
+  }, 600);
+}
+
+/* ================================================================
+   Envío: Registro
+================================================================ */
+function handleRegister(event) {
+  event.preventDefault();
+
+  const usernameEl = document.getElementById('reg-username');
+  const emailEl    = document.getElementById('reg-email');
+  const passEl     = document.getElementById('reg-password');
+  const confirmEl  = document.getElementById('reg-confirm');
+  const btn        = document.getElementById('reg-btn');
+  const btnTxt     = document.getElementById('reg-btn-text');
+  const spinner    = document.getElementById('reg-spinner');
+
+  const username = usernameEl.value.trim();
+  const email    = emailEl.value.trim();
+  const pass     = passEl.value;
+  const confirm  = confirmEl.value;
+
+  // Validar todos los campos
+  let valid = true;
+
+  const uCheck = window.Auth.validateUsername(username);
+  setFieldState(usernameEl, 'reg-username-err', uCheck);
+  if (!uCheck.valid) valid = false;
+
+  const eCheck = window.Auth.validateEmail(email);
+  setFieldState(emailEl, 'reg-email-err', eCheck);
+  if (!eCheck.valid) valid = false;
+
+  const pCheck = window.Auth.validatePassword(pass);
+  setFieldState(passEl, 'reg-pass-err', pCheck);
+  if (!pCheck.valid) valid = false;
+
+  const cCheck = pass === confirm
+    ? { valid: true, message: '' }
+    : { valid: false, message: 'Las contraseñas no coinciden.' };
+  setFieldState(confirmEl, 'reg-confirm-err', cCheck);
+  if (!cCheck.valid) valid = false;
+
+  if (!valid) return;
+
+  // Mostrar spinner
+  btn.disabled       = true;
+  btnTxt.textContent = 'Creando cuenta…';
+  spinner.style.display = 'inline-block';
+
+  setTimeout(() => {
+    const result = window.Auth.register(username, email, pass);
+
+    btn.disabled       = false;
+    btnTxt.textContent = 'Crear Cuenta';
+    spinner.style.display = 'none';
+
+    if (result.success) {
+      showAlert(result.message, 'success');
+      // Limpiar formulario y cambiar a pestaña de login
+      document.getElementById('register-form').reset();
+      document.getElementById('pass-strength-wrapper').style.display = 'none';
+      [usernameEl, emailEl, passEl, confirmEl].forEach(el => {
+        el.classList.remove('is-valid', 'is-invalid');
+      });
+      setTimeout(() => { switchTab('login'); }, 1800);
+    } else {
+      showAlert(result.message, 'error');
+    }
+  }, 700);
+}
+
+/* ================================================================
+   Typewriter effect en el logo
+================================================================ */
+(function typewriterLogo() {
+  const el   = document.getElementById('logo-text');
+  const text = 'CyberLearn';
+  let i = 0;
+  el.textContent = '';
+
+  const type = () => {
+    if (i < text.length) {
+      el.textContent += text[i++];
+      setTimeout(type, 100);
+    }
+  };
+  setTimeout(type, 400);
+})();
+
+/* ================================================================
+   Comprobar si ya hay sesión activa → redirigir
+================================================================ */
+(function checkExistingSession() {
+  const user = window.Auth.getCurrentUser();
+  if (user) {
+    window.location.href = 'dashboard.html';
+  }
+})();
+</script>
+
+</body>
+</html>

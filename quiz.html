@@ -1,0 +1,1138 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quiz Interactivo – CyberLearn</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── Reset & Variables ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0f;
+      --bg2:       #0f0f1a;
+      --bg3:       #141428;
+      --card:      #12122a;
+      --border:    #1e1e4a;
+      --accent:    #00f5ff;
+      --accent2:   #7b2fff;
+      --accent3:   #ff2d78;
+      --green:     #00ff88;
+      --red:       #ff4466;
+      --yellow:    #ffe500;
+      --text:      #e0e0ff;
+      --text-dim:  #6b6b9a;
+      --glow:      0 0 18px rgba(0,245,255,.45);
+      --glow2:     0 0 18px rgba(123,47,255,.45);
+      --radius:    12px;
+      --font:      'Courier New', 'Consolas', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Matrix Rain ── */
+    #matrix-canvas {
+      position: fixed; top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: .05; pointer-events: none; z-index: 0;
+    }
+
+    /* ── Scanlines ── */
+    body::after {
+      content: '';
+      position: fixed; inset: 0;
+      background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,.07) 3px, rgba(0,0,0,.07) 4px);
+      pointer-events: none; z-index: 999;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: sticky; top: 0; z-index: 100;
+      background: rgba(10,10,20,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between;
+      padding: .75rem 2rem; gap: 1rem;
+    }
+
+    .nav-logo {
+      font-size: 1.3rem; font-weight: 700;
+      color: var(--accent); text-shadow: var(--glow);
+      text-decoration: none; letter-spacing: 1px;
+    }
+
+    .btn {
+      display: inline-flex; align-items: center; gap: .4rem;
+      padding: .5rem 1.1rem; border-radius: 8px; border: 1px solid transparent;
+      font-family: var(--font); font-size: .85rem; font-weight: 600;
+      cursor: pointer; transition: all .22s; text-decoration: none; white-space: nowrap;
+    }
+
+    .btn-back {
+      background: transparent; border-color: var(--border); color: var(--text-dim);
+    }
+    .btn-back:hover { border-color: var(--accent); color: var(--accent); }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent2), var(--accent)); color: #fff; border-color: var(--accent);
+    }
+    .btn-primary:hover { box-shadow: var(--glow); transform: translateY(-2px); }
+
+    .btn-secondary {
+      background: transparent; border-color: var(--accent); color: var(--accent);
+    }
+    .btn-secondary:hover { background: rgba(0,245,255,.1); box-shadow: var(--glow); }
+
+    .btn-danger {
+      background: transparent; border-color: var(--accent3); color: var(--accent3);
+    }
+    .btn-danger:hover { background: rgba(255,45,120,.1); }
+
+    /* ── Main ── */
+    .main {
+      position: relative; z-index: 1;
+      max-width: 820px; margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ═══════════════════════════════
+       SCREENS
+    ═══════════════════════════════ */
+
+    .screen { display: none; }
+    .screen.active { display: block; }
+
+    /* ── Start Screen ── */
+    .start-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2.5rem 2rem; text-align: center;
+      position: relative; overflow: hidden;
+    }
+
+    .start-card::before {
+      content: '';
+      position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+    }
+
+    .start-icon { font-size: 4rem; display: block; margin-bottom: 1rem; }
+
+    .start-title {
+      font-size: 2rem; font-weight: 700;
+      color: var(--accent); text-shadow: var(--glow); margin-bottom: .6rem;
+    }
+
+    .start-desc {
+      color: var(--text-dim); font-size: .9rem;
+      line-height: 1.6; margin-bottom: 2rem; max-width: 460px; margin-left: auto; margin-right: auto;
+    }
+
+    .start-info-grid {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+
+    .info-item {
+      background: rgba(0,245,255,.05); border: 1px solid var(--border);
+      border-radius: 8px; padding: .9rem;
+    }
+
+    .info-value { font-size: 1.5rem; font-weight: 700; color: var(--accent); display: block; }
+    .info-label { font-size: .72rem; color: var(--text-dim); text-transform: uppercase; letter-spacing: 1px; }
+
+    /* ── Quiz Screen ── */
+    .progress-wrap {
+      margin-bottom: 1.5rem;
+    }
+
+    .progress-header {
+      display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: .5rem;
+    }
+
+    .progress-label { font-size: .8rem; color: var(--text-dim); }
+    .progress-score-label { font-size: .9rem; color: var(--accent); font-weight: 700; }
+
+    .progress-bar-track {
+      width: 100%; height: 6px;
+      background: var(--border); border-radius: 3px; overflow: hidden;
+    }
+
+    .progress-bar-fill {
+      height: 100%; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      transition: width .4s ease;
+    }
+
+    /* Timer */
+    .timer-wrap {
+      display: flex; justify-content: flex-end; margin-bottom: 1.2rem;
+    }
+
+    .timer-display {
+      display: flex; align-items: center; gap: .5rem;
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: 8px; padding: .4rem .9rem; font-size: .9rem;
+    }
+
+    .timer-display.urgent { border-color: var(--red); color: var(--red); animation: pulse .5s ease infinite alternate; }
+    @keyframes pulse { from { box-shadow: none; } to { box-shadow: 0 0 10px rgba(255,68,102,.5); } }
+
+    .timer-bar-track {
+      flex: 1; height: 4px;
+      background: var(--border); border-radius: 2px; overflow: hidden; margin-top: .3rem;
+    }
+
+    .timer-bar-fill {
+      height: 100%; border-radius: 2px;
+      background: var(--green);
+      transition: width 1s linear, background .5s;
+    }
+
+    /* Question Card */
+    .question-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2rem; margin-bottom: 1.5rem;
+      animation: fadeSlide .3s ease;
+    }
+
+    @keyframes fadeSlide {
+      from { opacity: 0; transform: translateX(20px); }
+      to   { opacity: 1; transform: translateX(0); }
+    }
+
+    .question-number {
+      font-size: .75rem; text-transform: uppercase; letter-spacing: 2px;
+      color: var(--accent2); margin-bottom: .8rem;
+    }
+
+    .question-text {
+      font-size: 1.1rem; font-weight: 700; color: var(--text);
+      line-height: 1.6; margin-bottom: 1.5rem;
+    }
+
+    /* Options */
+    .options-grid {
+      display: grid; gap: .75rem;
+    }
+
+    .option-btn {
+      display: flex; align-items: flex-start; gap: .9rem;
+      background: rgba(255,255,255,.03); border: 1px solid var(--border);
+      border-radius: 10px; padding: .9rem 1rem;
+      cursor: pointer; transition: all .2s;
+      text-align: left; font-family: var(--font); font-size: .9rem; color: var(--text);
+      width: 100%;
+    }
+
+    .option-btn:not(.answered):hover {
+      border-color: var(--accent2); background: rgba(123,47,255,.08);
+      transform: translateX(4px);
+    }
+
+    .option-label {
+      display: inline-flex; align-items: center; justify-content: center;
+      width: 28px; height: 28px; border-radius: 6px;
+      border: 1px solid var(--border); background: var(--bg3);
+      font-weight: 700; font-size: .85rem; flex-shrink: 0;
+      color: var(--text-dim); transition: all .2s;
+    }
+
+    .option-btn.correct {
+      border-color: var(--green); background: rgba(0,255,136,.1);
+      color: var(--green);
+    }
+    .option-btn.correct .option-label {
+      background: var(--green); border-color: var(--green); color: #000;
+    }
+
+    .option-btn.wrong {
+      border-color: var(--red); background: rgba(255,68,102,.1);
+      color: var(--red);
+    }
+    .option-btn.wrong .option-label {
+      background: var(--red); border-color: var(--red); color: #fff;
+    }
+
+    .option-btn.disabled { cursor: default; pointer-events: none; }
+
+    /* Explanation */
+    .explanation-box {
+      display: none;
+      background: rgba(0,245,255,.05); border: 1px solid rgba(0,245,255,.2);
+      border-radius: 8px; padding: 1rem 1.2rem;
+      margin-top: 1rem; font-size: .85rem; color: var(--text); line-height: 1.6;
+    }
+
+    .explanation-box.show { display: flex; gap: .6rem; align-items: flex-start; }
+    .explanation-box .ex-icon { font-size: 1.1rem; flex-shrink: 0; }
+
+    /* Next button */
+    .next-wrap { display: none; justify-content: flex-end; margin-top: 1.2rem; }
+    .next-wrap.show { display: flex; }
+
+    /* ── Results Screen ── */
+    .results-card {
+      background: var(--card); border: 1px solid var(--border);
+      border-radius: var(--radius); padding: 2.5rem 2rem; text-align: center;
+    }
+
+    .results-card::before {
+      content: '';
+      display: block; width: 100%; height: 3px; border-radius: 3px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent), var(--accent3));
+      margin-bottom: 2rem; border-radius: var(--radius) var(--radius) 0 0;
+      margin: -2.5rem -2rem 2rem; width: calc(100% + 4rem);
+    }
+
+    .results-emoji { font-size: 4rem; display: block; margin-bottom: 1rem; }
+
+    .results-grade {
+      font-size: 1.5rem; font-weight: 700; margin-bottom: .3rem;
+    }
+
+    .results-score {
+      font-size: 3.5rem; font-weight: 700;
+      color: var(--accent); text-shadow: var(--glow);
+      margin: .5rem 0;
+    }
+
+    .results-percent {
+      font-size: 1.1rem; color: var(--text-dim); margin-bottom: 2rem;
+    }
+
+    .results-breakdown {
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 1rem; margin-bottom: 2rem;
+    }
+
+    .breakdown-item {
+      background: rgba(0,245,255,.05); border: 1px solid var(--border);
+      border-radius: 8px; padding: .9rem;
+    }
+
+    .breakdown-value {
+      font-size: 1.6rem; font-weight: 700; display: block;
+    }
+
+    .breakdown-label {
+      font-size: .72rem; color: var(--text-dim);
+      text-transform: uppercase; letter-spacing: 1px;
+    }
+
+    .results-actions {
+      display: flex; gap: 1rem; justify-content: center; flex-wrap: wrap;
+    }
+
+    /* Grade colors */
+    .grade-expert   { color: var(--accent); text-shadow: var(--glow); }
+    .grade-advanced { color: var(--green); }
+    .grade-mid      { color: var(--yellow); }
+    .grade-beginner { color: var(--accent3); }
+
+    /* Question review */
+    .review-section { margin-top: 2rem; text-align: left; }
+
+    .review-title {
+      font-size: 1rem; font-weight: 700; color: var(--accent);
+      text-transform: uppercase; letter-spacing: 2px; margin-bottom: 1rem;
+      display: flex; align-items: center; gap: .6rem;
+    }
+    .review-title::after { content: ''; flex: 1; height: 1px; background: linear-gradient(to right, var(--accent), transparent); }
+
+    .review-item {
+      background: rgba(255,255,255,.02); border: 1px solid var(--border);
+      border-radius: 8px; padding: 1rem; margin-bottom: .6rem;
+      display: flex; gap: .8rem; align-items: flex-start;
+    }
+
+    .review-item .ri-icon { font-size: 1.2rem; flex-shrink: 0; margin-top: .1rem; }
+    .review-item .ri-q { font-size: .82rem; color: var(--text-dim); margin-bottom: .2rem; }
+    .review-item .ri-a { font-size: .88rem; }
+    .review-item.ri-correct .ri-a { color: var(--green); }
+    .review-item.ri-wrong .ri-a { color: var(--red); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .navbar { padding: .6rem 1rem; }
+      .main { padding: 1.2rem 1rem 3rem; }
+      .start-title { font-size: 1.5rem; }
+      .question-text { font-size: 1rem; }
+      .results-score { font-size: 2.8rem; }
+    }
+
+    .footer-quiz {
+      position: relative; z-index: 1;
+      text-align: center; padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim); font-size: .8rem;
+    }
+    .footer-quiz span { color: var(--accent3); }
+  </style>
+</head>
+<body>
+
+<canvas id="matrix-canvas"></canvas>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <a href="dashboard.html" class="nav-logo">🛡️ CyberLearn</a>
+  <div style="display:flex;gap:.7rem;align-items:center;">
+    <span style="font-size:.85rem;color:var(--text-dim);" id="nav-username-display">Quiz</span>
+    <a href="dashboard.html" class="btn btn-back">← Dashboard</a>
+  </div>
+</nav>
+
+<main class="main">
+
+  <!-- ══ START SCREEN ══ -->
+  <div id="screen-start" class="screen active">
+    <div class="start-card">
+      <span class="start-icon">🧠</span>
+      <div class="start-title">Quiz Interactivo</div>
+      <p class="start-desc">
+        Pon a prueba tus conocimientos de ciberseguridad con 20 preguntas de múltiple opción.
+        Tienes <strong>30 segundos</strong> por pregunta. ¡Demuestra lo que sabes!
+      </p>
+      <div class="start-info-grid">
+        <div class="info-item">
+          <span class="info-value">20</span>
+          <span class="info-label">Preguntas</span>
+        </div>
+        <div class="info-item">
+          <span class="info-value">30s</span>
+          <span class="info-label">Por pregunta</span>
+        </div>
+        <div class="info-item">
+          <span class="info-value">4</span>
+          <span class="info-label">Opciones</span>
+        </div>
+        <div class="info-item">
+          <span class="info-value" id="best-score-display">-</span>
+          <span class="info-label">Mejor puntuación</span>
+        </div>
+      </div>
+      <button class="btn btn-primary" id="btn-start-quiz" style="font-size:1rem;padding:.8rem 2.5rem;">
+        ▶ Empezar Quiz
+      </button>
+    </div>
+  </div>
+
+  <!-- ══ QUIZ SCREEN ══ -->
+  <div id="screen-quiz" class="screen">
+
+    <!-- Progress -->
+    <div class="progress-wrap">
+      <div class="progress-header">
+        <span class="progress-label">Pregunta <span id="q-current">1</span> de <span id="q-total">20</span></span>
+        <span class="progress-score-label">⭐ <span id="score-counter">0</span> correctas</span>
+      </div>
+      <div class="progress-bar-track">
+        <div class="progress-bar-fill" id="progress-fill" style="width:0%"></div>
+      </div>
+    </div>
+
+    <!-- Timer -->
+    <div class="timer-wrap">
+      <div class="timer-display" id="timer-display">
+        ⏱️ <span id="timer-countdown">30</span>s
+      </div>
+    </div>
+    <div class="progress-bar-track" style="margin-bottom:1.5rem;height:4px;">
+      <div class="timer-bar-fill" id="timer-bar" style="width:100%"></div>
+    </div>
+
+    <!-- Question Card -->
+    <div class="question-card" id="question-card">
+      <div class="question-number" id="q-number-label">PREGUNTA 1</div>
+      <div class="question-text" id="q-text">Cargando…</div>
+      <div class="options-grid" id="options-grid"></div>
+      <div class="explanation-box" id="explanation-box">
+        <span class="ex-icon">💡</span>
+        <span id="explanation-text"></span>
+      </div>
+    </div>
+
+    <!-- Next Button -->
+    <div class="next-wrap" id="next-wrap">
+      <button class="btn btn-primary" id="btn-next">Siguiente →</button>
+    </div>
+
+  </div>
+
+  <!-- ══ RESULTS SCREEN ══ -->
+  <div id="screen-results" class="screen">
+    <div class="results-card">
+      <span class="results-emoji" id="results-emoji">🏆</span>
+      <div class="results-grade" id="results-grade">Experto</div>
+      <div class="results-score" id="results-score">20/20</div>
+      <div class="results-percent" id="results-percent">100% correcto</div>
+
+      <div class="results-breakdown">
+        <div class="breakdown-item">
+          <span class="breakdown-value" id="bd-correct" style="color:var(--green);">0</span>
+          <span class="breakdown-label">✅ Correctas</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="breakdown-value" id="bd-wrong" style="color:var(--red);">0</span>
+          <span class="breakdown-label">❌ Incorrectas</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="breakdown-value" id="bd-time" style="color:var(--yellow);">0s</span>
+          <span class="breakdown-label">⏱️ Tiempo medio</span>
+        </div>
+        <div class="breakdown-item">
+          <span class="breakdown-value" id="bd-points" style="color:var(--accent);">0</span>
+          <span class="breakdown-label">⭐ Puntos ganados</span>
+        </div>
+      </div>
+
+      <div class="results-actions">
+        <button class="btn btn-primary" id="btn-replay">🔄 Jugar de nuevo</button>
+        <a href="dashboard.html" class="btn btn-secondary">🏠 Volver al Dashboard</a>
+      </div>
+
+      <!-- Review -->
+      <div class="review-section">
+        <div class="review-title">📋 Revisión de respuestas</div>
+        <div id="review-list"></div>
+      </div>
+    </div>
+  </div>
+
+</main>
+
+<footer class="footer-quiz">
+  Hecho con <span>❤️</span> para la comunidad de ciberseguridad &nbsp;·&nbsp; CyberLearn © 2025
+</footer>
+
+<script src="js/auth.js"></script>
+<script>
+/* ═══════════════════════════════════════════
+   Auth Guard
+═══════════════════════════════════════════ */
+(function () {
+  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
+    window.location.href = 'index.html';
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   Matrix Rain
+═══════════════════════════════════════════ */
+(function () {
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx    = canvas.getContext('2d');
+  let cols, drops;
+  const chars  = '01アイウエオカキクケコサシスセソ abcdefghijklmnopqrstuvwxyz<>{}[]';
+  function init() {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols  = Math.floor(canvas.width / 16);
+    drops = Array.from({ length: cols }, () => Math.random() * -50);
+  }
+  function draw() {
+    ctx.fillStyle = 'rgba(10,10,15,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00f5ff';
+    ctx.font = '14px monospace';
+    drops.forEach((y, i) => {
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(char, i * 16, y * 16);
+      if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i] += 0.5;
+    });
+  }
+  init();
+  window.addEventListener('resize', init);
+  setInterval(draw, 60);
+})();
+
+/* ═══════════════════════════════════════════
+   Questions Bank – 20 Questions
+═══════════════════════════════════════════ */
+const QUESTIONS = [
+  {
+    text: '¿Qué es el phishing?',
+    options: [
+      'Un tipo de malware que se replica solo',
+      'Una técnica de engaño para obtener información confidencial',
+      'Un protocolo de seguridad de red',
+      'Un tipo de firewall',
+    ],
+    correct: 1,
+    explanation: 'El phishing es una técnica de ingeniería social en la que los atacantes se hacen pasar por entidades legítimas (bancos, empresas) mediante emails, SMS o webs falsas para obtener datos confidenciales como contraseñas o datos bancarios.',
+  },
+  {
+    text: '¿Qué significa "SQL Injection"?',
+    options: [
+      'Una técnica para optimizar bases de datos',
+      'Un tipo de cifrado de base de datos',
+      'La inserción de código SQL malicioso en formularios web',
+      'Un antivirus especializado en bases de datos',
+    ],
+    correct: 2,
+    explanation: 'SQL Injection consiste en insertar sentencias SQL maliciosas en campos de entrada de una aplicación web. Si la aplicación no sanitiza correctamente los datos, el atacante puede manipular, leer o eliminar información de la base de datos.',
+  },
+  {
+    text: '¿Qué es un firewall?',
+    options: [
+      'Un tipo de virus informático',
+      'Software o hardware que filtra y controla el tráfico de red',
+      'Un método de cifrado de datos',
+      'Una técnica de hacking avanzada',
+    ],
+    correct: 1,
+    explanation: 'Un firewall es un sistema de seguridad (software o hardware) que monitoriza y filtra el tráfico de red entrante y saliente según reglas de seguridad predefinidas. Actúa como barrera entre redes de confianza e inseguras.',
+  },
+  {
+    text: '¿Qué es el ransomware?',
+    options: [
+      'Software que muestra publicidad no deseada',
+      'Malware que cifra los archivos de la víctima y exige un rescate',
+      'Un tipo de firewall de nueva generación',
+      'Una VPN maliciosa',
+    ],
+    correct: 1,
+    explanation: 'El ransomware es un tipo de malware que cifra los ficheros del sistema víctima haciéndolos inaccesibles. Los atacantes exigen un rescate económico (generalmente en criptomonedas) a cambio de la clave de descifrado.',
+  },
+  {
+    text: '¿Qué es la autenticación de dos factores (2FA)?',
+    options: [
+      'Usar dos contraseñas diferentes en el mismo sistema',
+      'Un método de doble cifrado de datos',
+      'Verificación de identidad mediante dos métodos distintos',
+      'Instalar dos firewalls en paralelo',
+    ],
+    correct: 2,
+    explanation: 'La autenticación de dos factores añade una capa de seguridad adicional al proceso de inicio de sesión. Combina algo que sabes (contraseña) con algo que tienes (código SMS/app) o algo que eres (biometría).',
+  },
+  {
+    text: '¿Qué es XSS (Cross-Site Scripting)?',
+    options: [
+      'Un protocolo de red seguro para comunicaciones cifradas',
+      'Inyección de scripts maliciosos en páginas web vistas por otros usuarios',
+      'Un tipo de VPN empresarial',
+      'Un método de cifrado de sesión web',
+    ],
+    correct: 1,
+    explanation: 'XSS permite a los atacantes inyectar scripts maliciosos en páginas web legítimas. Cuando otros usuarios visitan esas páginas, el script se ejecuta en su navegador, pudiendo robar cookies de sesión, redirigir a sitios maliciosos o modificar el contenido.',
+  },
+  {
+    text: '¿Qué es una VPN?',
+    options: [
+      'Un tipo de malware de red',
+      'Red Privada Virtual que cifra el tráfico de internet',
+      'Un antivirus de nueva generación',
+      'Un protocolo de red sin cifrado',
+    ],
+    correct: 1,
+    explanation: 'Una VPN (Virtual Private Network) crea un túnel cifrado entre tu dispositivo e internet, ocultando tu IP real y cifrando todos los datos transmitidos. Es especialmente útil en redes Wi-Fi públicas o para acceder a recursos corporativos de forma remota.',
+  },
+  {
+    text: '¿Qué es el hashing?',
+    options: [
+      'Un tipo de ataque de denegación de servicio',
+      'Transformar datos de cualquier tamaño en una cadena de longitud fija, proceso irreversible',
+      'Cifrado simétrico de archivos',
+      'Un tipo de VPN empresarial',
+    ],
+    correct: 1,
+    explanation: 'El hashing es una función unidireccional que convierte cualquier dato en una cadena de longitud fija (digest). Es determinista (misma entrada = misma salida) pero no reversible. Se usa para almacenar contraseñas y verificar integridad de archivos.',
+  },
+  {
+    text: '¿Qué es un ataque de fuerza bruta?',
+    options: [
+      'Un ataque físico contra servidores en un centro de datos',
+      'Probar sistemáticamente todas las combinaciones posibles de contraseñas',
+      'Un tipo de phishing sofisticado',
+      'Infección de sistemas mediante USB malicioso',
+    ],
+    correct: 1,
+    explanation: 'Un ataque de fuerza bruta intenta descubrir una contraseña o clave probando todas las combinaciones posibles. Con equipos modernos, contraseñas cortas o simples pueden crackearse en segundos. El uso de contraseñas largas y complejas, junto con bloqueo por intentos, mitiga este riesgo.',
+  },
+  {
+    text: '¿Qué es HTTPS?',
+    options: [
+      'Un lenguaje de programación para aplicaciones web seguras',
+      'HTTP con cifrado SSL/TLS para conexiones seguras',
+      'Un tipo de malware que intercepta tráfico web',
+      'Un protocolo de correo electrónico cifrado',
+    ],
+    correct: 1,
+    explanation: 'HTTPS es HTTP combinado con el protocolo TLS/SSL para cifrar la comunicación entre el navegador y el servidor. Garantiza confidencialidad, integridad y autenticación. El candado visible en la barra del navegador indica su uso.',
+  },
+  {
+    text: '¿Qué es un zero-day (día cero)?',
+    options: [
+      'Un día en que no se registran ataques informáticos',
+      'Una vulnerabilidad desconocida para el fabricante sin parche disponible',
+      'El primer día que un hacker accede a un sistema',
+      'Un tipo especial de contraseña temporal',
+    ],
+    correct: 1,
+    explanation: 'Un zero-day es una vulnerabilidad en software o hardware que es desconocida para su fabricante y para la comunidad de seguridad. Recibe ese nombre porque el fabricante tiene "cero días" para preparar un parche antes de que sea explotada.',
+  },
+  {
+    text: '¿Qué es la ingeniería social?',
+    options: [
+      'Programación avanzada de sistemas de seguridad',
+      'Manipular personas psicológicamente para obtener información confidencial',
+      'Diseño de redes informáticas seguras',
+      'Construcción automatizada de malware',
+    ],
+    correct: 1,
+    explanation: 'La ingeniería social explota la psicología humana en lugar de vulnerabilidades técnicas. Los atacantes manipulan a las personas mediante engaño, pretextos o urgencia artificial para que revelen información confidencial o realicen acciones perjudiciales.',
+  },
+  {
+    text: '¿Qué es un backdoor (puerta trasera)?',
+    options: [
+      'La puerta trasera física de un servidor en un datacenter',
+      'Acceso oculto y no autorizado a un sistema implantado por un atacante',
+      'Un método de cifrado alternativo y seguro',
+      'Un tipo de VPN para acceso remoto legítimo',
+    ],
+    correct: 1,
+    explanation: 'Un backdoor es un método oculto para eludir la autenticación normal de un sistema. Puede ser instalado por atacantes tras comprometer un sistema, o incluido intencionalmente por el fabricante. Permite acceso remoto persistente sin conocimiento del propietario.',
+  },
+  {
+    text: '¿Qué es un botnet?',
+    options: [
+      'Un robot de programación automática para tests',
+      'Red de dispositivos infectados y controlados remotamente por un atacante',
+      'Un antivirus que opera de forma automatizada',
+      'Un tipo de firewall distribuido',
+    ],
+    correct: 1,
+    explanation: 'Una botnet es una red de dispositivos comprometidos (computadoras, routers, IoT) controlados remotamente por un atacante (botmaster). Se utilizan para ataques DDoS, envío de spam, minería de criptomonedas o distribución de malware.',
+  },
+  {
+    text: '¿Qué es CSRF (Cross-Site Request Forgery)?',
+    options: [
+      'Un protocolo de red para peticiones seguras entre sitios',
+      'Ataque que fuerza al usuario autenticado a ejecutar acciones no deseadas en una web',
+      'Un tipo de cifrado de sesiones web cruzadas',
+      'Un método de autenticación multifactor',
+    ],
+    correct: 1,
+    explanation: 'CSRF engaña al navegador de un usuario autenticado para que envíe peticiones HTTP no autorizadas a una aplicación en la que tiene sesión activa. El servidor las procesa como legítimas. Se previene con tokens CSRF únicos por sesión.',
+  },
+  {
+    text: '¿Qué es un pentest (prueba de penetración)?',
+    options: [
+      'Una prueba de rendimiento y velocidad de servidores',
+      'Ataque simulado y autorizado para encontrar vulnerabilidades en un sistema',
+      'Test de verificación de contraseñas débiles',
+      'Prueba de conectividad entre redes',
+    ],
+    correct: 1,
+    explanation: 'Un pentest (penetration test) es una evaluación de seguridad donde expertos intentan comprometer un sistema con autorización explícita del propietario. El objetivo es identificar vulnerabilidades antes de que lo hagan los atacantes reales, proporcionando un informe detallado con hallazgos y recomendaciones.',
+  },
+  {
+    text: '¿Qué algoritmo de hash se considera INSEGURO hoy en día?',
+    options: [
+      'SHA-256',
+      'bcrypt',
+      'MD5',
+      'Argon2',
+    ],
+    correct: 2,
+    explanation: 'MD5 (Message Digest 5) fue diseñado en 1991. Hoy se considera criptográficamente roto: es vulnerable a colisiones (dos entradas diferentes producen el mismo hash) y se puede revertir mediante tablas rainbow. Para contraseñas, usa bcrypt, Argon2 o scrypt.',
+  },
+  {
+    text: '¿Qué es el principio de mínimo privilegio (Least Privilege)?',
+    options: [
+      'Dar acceso máximo a todos los usuarios para maximizar la productividad',
+      'Otorgar a usuarios y sistemas solo los permisos estrictamente necesarios para su función',
+      'Usar contraseñas con la longitud mínima permitida',
+      'Instalar el mínimo de software posible en servidores',
+    ],
+    correct: 1,
+    explanation: 'El principio de mínimo privilegio establece que cada usuario, proceso o sistema debe tener únicamente los permisos mínimos necesarios para realizar su función. Limita el daño potencial ante compromisos de cuentas o malware, reduciendo significativamente la superficie de ataque.',
+  },
+  {
+    text: '¿Qué puerto usa HTTPS por defecto?',
+    options: [
+      'Puerto 80',
+      'Puerto 22',
+      'Puerto 443',
+      'Puerto 8080',
+    ],
+    correct: 2,
+    explanation: 'HTTPS utiliza el puerto TCP 443 por defecto. El puerto 80 es para HTTP sin cifrar; el 22 para SSH; el 8080 es un alternativo común para HTTP en desarrollo. Los servidores web escuchan en 443 para las conexiones HTTPS seguras.',
+  },
+  {
+    text: '¿Qué es la criptografía asimétrica?',
+    options: [
+      'Cifrado que usa la misma clave para cifrar y descifrar datos',
+      'Cifrado que utiliza un par de claves: una pública para cifrar y una privada para descifrar',
+      'Cifrado que no requiere ninguna clave',
+      'Un tipo de función hash unidireccional',
+    ],
+    correct: 1,
+    explanation: 'La criptografía asimétrica (clave pública) usa un par de claves matemáticamente relacionadas: la clave pública (compartida libremente, usada para cifrar) y la clave privada (secreta, usada para descifrar). Es la base de HTTPS, SSH, firmas digitales y certificados SSL/TLS.',
+  },
+];
+
+/* ═══════════════════════════════════════════
+   Quiz State
+═══════════════════════════════════════════ */
+const TOTAL_Q   = QUESTIONS.length; // 20
+const TIME_LIMIT = 30; // seconds per question
+
+let quizState = {
+  questions:   [],
+  currentIdx:  0,
+  score:        0,
+  answers:     [],   // { questionIdx, selectedIdx, correct, timeUsed }
+  timerInterval: null,
+  timeLeft:    TIME_LIMIT,
+  startTime:   null,
+  qStartTime:  null,
+  answered:    false,
+};
+
+/* ── Shuffle helper ── */
+function shuffle(arr) {
+  const a = [...arr];
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [a[i], a[j]] = [a[j], a[i]];
+  }
+  return a;
+}
+
+/* ═══════════════════════════════════════════
+   Screen Management
+═══════════════════════════════════════════ */
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+}
+
+/* ═══════════════════════════════════════════
+   Init
+═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function () {
+  // Nav username
+  const session = Auth.getSession ? Auth.getSession() : null;
+  if (session) {
+    document.getElementById('nav-username-display').textContent = session.username;
+  }
+
+  // Best score
+  const progress = Auth.getProgress ? Auth.getProgress() : {};
+  const best = progress.quizBestScore || '-';
+  document.getElementById('best-score-display').textContent = best === '-' ? '-' : `${best}/20`;
+
+  // Start button
+  document.getElementById('btn-start-quiz').addEventListener('click', startQuiz);
+  document.getElementById('btn-next').addEventListener('click', nextQuestion);
+  document.getElementById('btn-replay').addEventListener('click', startQuiz);
+});
+
+/* ═══════════════════════════════════════════
+   Start Quiz
+═══════════════════════════════════════════ */
+function startQuiz() {
+  quizState.questions   = shuffle(QUESTIONS);
+  quizState.currentIdx  = 0;
+  quizState.score       = 0;
+  quizState.answers     = [];
+  quizState.startTime   = Date.now();
+
+  showScreen('screen-quiz');
+  renderQuestion();
+}
+
+/* ═══════════════════════════════════════════
+   Render Question
+═══════════════════════════════════════════ */
+function renderQuestion() {
+  const q   = quizState.questions[quizState.currentIdx];
+  const idx = quizState.currentIdx;
+  const num = idx + 1;
+
+  quizState.answered = false;
+  quizState.qStartTime = Date.now();
+
+  // Progress
+  document.getElementById('q-current').textContent   = num;
+  document.getElementById('q-total').textContent     = TOTAL_Q;
+  document.getElementById('score-counter').textContent = quizState.score;
+  document.getElementById('progress-fill').style.width = `${((num - 1) / TOTAL_Q) * 100}%`;
+  document.getElementById('q-number-label').textContent = `PREGUNTA ${num}`;
+  document.getElementById('q-text').textContent      = q.text;
+
+  // Options
+  const grid = document.getElementById('options-grid');
+  const labels = ['A', 'B', 'C', 'D'];
+  grid.innerHTML = q.options.map((opt, i) => `
+    <button class="option-btn" data-index="${i}" onclick="selectAnswer(${i})">
+      <span class="option-label">${labels[i]}</span>
+      <span>${opt}</span>
+    </button>
+  `).join('');
+
+  // Explanation
+  document.getElementById('explanation-box').classList.remove('show');
+  document.getElementById('explanation-text').textContent = '';
+  document.getElementById('next-wrap').classList.remove('show');
+
+  // Timer
+  startTimer();
+}
+
+/* ═══════════════════════════════════════════
+   Timer
+═══════════════════════════════════════════ */
+function startTimer() {
+  clearInterval(quizState.timerInterval);
+  quizState.timeLeft = TIME_LIMIT;
+  updateTimerDisplay();
+
+  quizState.timerInterval = setInterval(function () {
+    quizState.timeLeft--;
+    updateTimerDisplay();
+    if (quizState.timeLeft <= 0) {
+      clearInterval(quizState.timerInterval);
+      if (!quizState.answered) {
+        timeOut();
+      }
+    }
+  }, 1000);
+}
+
+function updateTimerDisplay() {
+  const tl = quizState.timeLeft;
+  const el = document.getElementById('timer-countdown');
+  const disp = document.getElementById('timer-display');
+  const bar  = document.getElementById('timer-bar');
+  el.textContent = tl;
+  bar.style.width = `${(tl / TIME_LIMIT) * 100}%`;
+
+  // Color transitions
+  if (tl <= 10) {
+    bar.style.background = '#ff4466';
+    disp.classList.add('urgent');
+  } else if (tl <= 20) {
+    bar.style.background = '#ffe500';
+    disp.classList.remove('urgent');
+  } else {
+    bar.style.background = '#00ff88';
+    disp.classList.remove('urgent');
+  }
+}
+
+function timeOut() {
+  quizState.answered = true;
+  const q = quizState.questions[quizState.currentIdx];
+  const timeUsed = Math.round((Date.now() - quizState.qStartTime) / 1000);
+
+  // Highlight correct answer
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach((btn, i) => {
+    btn.classList.add('disabled');
+    if (i === q.correct) btn.classList.add('correct');
+  });
+
+  // Record (no answer selected = wrong)
+  quizState.answers.push({ questionIdx: quizState.currentIdx, selectedIdx: -1, correct: false, timeUsed });
+
+  // Show explanation
+  showExplanation(q.explanation, '⏰ ¡Tiempo agotado! ');
+  document.getElementById('next-wrap').classList.add('show');
+}
+
+/* ═══════════════════════════════════════════
+   Select Answer
+═══════════════════════════════════════════ */
+function selectAnswer(selectedIdx) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+  clearInterval(quizState.timerInterval);
+
+  const q = quizState.questions[quizState.currentIdx];
+  const isCorrect = selectedIdx === q.correct;
+  const timeUsed  = Math.round((Date.now() - quizState.qStartTime) / 1000);
+
+  if (isCorrect) quizState.score++;
+
+  quizState.answers.push({
+    questionIdx: quizState.currentIdx,
+    selectedIdx,
+    correct: isCorrect,
+    timeUsed,
+  });
+
+  // Visual feedback on buttons
+  const btns = document.querySelectorAll('.option-btn');
+  btns.forEach((btn, i) => {
+    btn.classList.add('disabled');
+    if (i === q.correct) btn.classList.add('correct');
+    else if (i === selectedIdx && !isCorrect) btn.classList.add('wrong');
+  });
+
+  // Update score display
+  document.getElementById('score-counter').textContent = quizState.score;
+
+  // Explanation
+  const prefix = isCorrect ? '✅ ¡Correcto! ' : '❌ Incorrecto. ';
+  showExplanation(q.explanation, prefix);
+
+  // Show next button
+  document.getElementById('next-wrap').classList.add('show');
+}
+
+/* ── Show Explanation ── */
+function showExplanation(text, prefix) {
+  const box = document.getElementById('explanation-box');
+  document.getElementById('explanation-text').innerHTML = `<strong>${prefix}</strong>${text}`;
+  box.classList.add('show');
+}
+
+/* ═══════════════════════════════════════════
+   Next Question
+═══════════════════════════════════════════ */
+function nextQuestion() {
+  quizState.currentIdx++;
+  if (quizState.currentIdx >= TOTAL_Q) {
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+/* ═══════════════════════════════════════════
+   Results Screen
+═══════════════════════════════════════════ */
+function showResults() {
+  showScreen('screen-results');
+
+  const score   = quizState.score;
+  const percent = Math.round((score / TOTAL_Q) * 100);
+  const totalTime = Math.round((Date.now() - quizState.startTime) / 1000);
+  const avgTime   = Math.round(totalTime / TOTAL_Q);
+  const wrong     = TOTAL_Q - score;
+  const points    = score * 100 + (score === TOTAL_Q ? 500 : 0); // bonus for perfect
+
+  // Grade
+  let grade, emoji, gradeClass;
+  if (percent >= 90) {
+    grade = '🏆 Experto en Ciberseguridad';
+    emoji = '🏆';
+    gradeClass = 'grade-expert';
+  } else if (percent >= 70) {
+    grade = '🥈 Nivel Avanzado';
+    emoji = '🥈';
+    gradeClass = 'grade-advanced';
+  } else if (percent >= 50) {
+    grade = '🥉 Nivel Intermedio';
+    emoji = '🥉';
+    gradeClass = 'grade-mid';
+  } else {
+    grade = '📚 Nivel Principiante';
+    emoji = '📖';
+    gradeClass = 'grade-beginner';
+  }
+
+  document.getElementById('results-emoji').textContent   = emoji;
+  document.getElementById('results-grade').textContent   = grade;
+  document.getElementById('results-grade').className     = `results-grade ${gradeClass}`;
+  document.getElementById('results-score').textContent   = `${score}/${TOTAL_Q}`;
+  document.getElementById('results-percent').textContent = `${percent}% correcto`;
+  document.getElementById('bd-correct').textContent      = score;
+  document.getElementById('bd-wrong').textContent        = wrong;
+  document.getElementById('bd-time').textContent         = `${avgTime}s`;
+  document.getElementById('bd-points').textContent       = points;
+
+  // Question Review
+  renderReview();
+
+  // Save progress
+  saveProgress(score, points);
+}
+
+/* ── Question Review ── */
+function renderReview() {
+  const list = document.getElementById('review-list');
+  const labels = ['A', 'B', 'C', 'D'];
+
+  list.innerHTML = quizState.answers.map((ans, i) => {
+    const q = quizState.questions[ans.questionIdx];
+    const isCorrect = ans.correct;
+    const userAnswerText = ans.selectedIdx >= 0
+      ? `${labels[ans.selectedIdx]}) ${q.options[ans.selectedIdx]}`
+      : '⏰ Sin respuesta (tiempo agotado)';
+    const correctText = `${labels[q.correct]}) ${q.options[q.correct]}`;
+
+    return `
+      <div class="review-item ${isCorrect ? 'ri-correct' : 'ri-wrong'}">
+        <span class="ri-icon">${isCorrect ? '✅' : '❌'}</span>
+        <div>
+          <div class="ri-q">${i + 1}. ${q.text}</div>
+          <div class="ri-a">
+            ${isCorrect
+              ? correctText
+              : `Tu respuesta: <span style="color:var(--red)">${userAnswerText}</span>
+                 &nbsp;·&nbsp; Correcta: <span style="color:var(--green)">${correctText}</span>`
+            }
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+/* ── Save Progress ── */
+function saveProgress(score, points) {
+  if (!Auth.saveProgress) return;
+
+  const session  = Auth.getSession ? Auth.getSession() : null;
+  const username = session ? session.username : null;
+  if (!username) return;
+
+  const progress = Auth.getProgress ? Auth.getProgress() : {};
+
+  // Best score
+  const prevBest = progress.quizBestScore || 0;
+  if (score > prevBest) progress.quizBestScore = score;
+
+  // Totals
+  progress.points             = (progress.points || 0) + points;
+  progress.quizzesCompleted   = (progress.quizzesCompleted || 0) + 1;
+
+  // History
+  if (!progress.history) progress.history = [];
+  progress.history.push({
+    type: 'quiz',
+    description: `Quiz completado: ${score}/${TOTAL_Q} correctas`,
+    score: points,
+    date: new Date().toLocaleDateString('es-ES'),
+  });
+
+  // Streak (simple: increment each time quiz played today)
+  const today = new Date().toDateString();
+  if (progress.lastPlayed !== today) {
+    progress.streak = (progress.streak || 0) + 1;
+    progress.lastPlayed = today;
+  }
+
+  Auth.saveProgress(progress);
+
+  // Update best score display
+  document.getElementById('best-score-display') &&
+    (document.getElementById('best-score-display').textContent = `${progress.quizBestScore}/20`);
+}
+</script>
+</body>
+</html>

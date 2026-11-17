@@ -1,0 +1,957 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Glosario de Ciberseguridad</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg-primary:   #0a0e1a;
+      --bg-secondary: #0d1224;
+      --bg-card:      #111827;
+      --bg-card-hover:#141d30;
+      --accent-green: #00ff41;
+      --accent-cyan:  #00d4ff;
+      --accent-purple:#bf00ff;
+      --text-primary: #e2e8f0;
+      --text-muted:   #64748b;
+      --border-color: #1e293b;
+      --danger:       #ff4444;
+      --warning:      #ffaa00;
+    }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+    }
+
+    /* ===== NAVBAR ===== */
+    .navbar {
+      background: rgba(10, 14, 26, 0.95);
+      border-bottom: 1px solid var(--accent-green);
+      padding: 0 2rem;
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+      backdrop-filter: blur(10px);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+    }
+    .navbar-brand {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent-green);
+      text-decoration: none;
+      text-shadow: 0 0 12px rgba(0,255,65,0.5);
+      letter-spacing: 2px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .navbar-brand span { color: var(--accent-cyan); }
+    .navbar-links {
+      display: flex;
+      gap: 1.5rem;
+      list-style: none;
+      align-items: center;
+    }
+    .navbar-links a {
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      padding: 6px 12px;
+      border-radius: 4px;
+      transition: all 0.2s;
+      border: 1px solid transparent;
+    }
+    .navbar-links a:hover, .navbar-links a.active {
+      color: var(--accent-green);
+      border-color: var(--accent-green);
+      box-shadow: 0 0 8px rgba(0,255,65,0.3);
+    }
+    .navbar-user {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--accent-cyan);
+    }
+    .logout-btn {
+      background: transparent;
+      border: 1px solid var(--danger);
+      color: var(--danger);
+      padding: 4px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 0.8rem;
+      transition: all 0.2s;
+    }
+    .logout-btn:hover { background: var(--danger); color: white; }
+
+    /* ===== PAGE HEADER ===== */
+    .page-header {
+      text-align: center;
+      padding: 3rem 2rem 2rem;
+      background: linear-gradient(180deg, rgba(0,255,65,0.05) 0%, transparent 100%);
+      border-bottom: 1px solid var(--border-color);
+    }
+    .page-header h1 {
+      font-size: 2.4rem;
+      color: var(--accent-green);
+      text-shadow: 0 0 20px rgba(0,255,65,0.4);
+      letter-spacing: 3px;
+      margin-bottom: 0.5rem;
+    }
+    .page-header p {
+      color: var(--text-muted);
+      font-size: 1rem;
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    /* ===== CONTROLS ===== */
+    .controls {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 2rem 2rem 0;
+      display: flex;
+      flex-direction: column;
+      gap: 1.2rem;
+    }
+
+    /* Search */
+    .search-wrapper {
+      position: relative;
+      max-width: 600px;
+      width: 100%;
+      margin: 0 auto;
+    }
+    .search-icon {
+      position: absolute;
+      left: 14px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: var(--accent-green);
+      font-size: 1.1rem;
+    }
+    #searchInput {
+      width: 100%;
+      padding: 12px 16px 12px 42px;
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      font-size: 1rem;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+    #searchInput:focus {
+      border-color: var(--accent-green);
+      box-shadow: 0 0 12px rgba(0,255,65,0.2);
+    }
+    #searchInput::placeholder { color: var(--text-muted); }
+
+    /* Category Filter */
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      align-items: center;
+    }
+    .filter-label {
+      color: var(--text-muted);
+      font-size: 0.8rem;
+      margin-right: 4px;
+      letter-spacing: 1px;
+      text-transform: uppercase;
+    }
+    .cat-btn {
+      padding: 6px 16px;
+      border-radius: 20px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.85rem;
+      transition: all 0.2s;
+      letter-spacing: 0.5px;
+    }
+    .cat-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+    .cat-btn.active {
+      background: rgba(0,255,65,0.1);
+      border-color: var(--accent-green);
+      color: var(--accent-green);
+      box-shadow: 0 0 8px rgba(0,255,65,0.2);
+    }
+
+    /* Alphabet Filter */
+    .alpha-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 4px;
+      justify-content: center;
+    }
+    .alpha-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      background: var(--bg-card);
+      color: var(--text-muted);
+      cursor: pointer;
+      font-size: 0.75rem;
+      font-weight: 600;
+      transition: all 0.2s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .alpha-btn:hover { border-color: var(--accent-cyan); color: var(--accent-cyan); }
+    .alpha-btn.active {
+      background: rgba(0,212,255,0.15);
+      border-color: var(--accent-cyan);
+      color: var(--accent-cyan);
+      box-shadow: 0 0 6px rgba(0,212,255,0.3);
+    }
+    .alpha-btn.disabled { opacity: 0.25; cursor: default; pointer-events: none; }
+
+    /* Counter */
+    .counter {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      padding: 0.5rem 0;
+    }
+    .counter strong { color: var(--accent-green); }
+
+    /* ===== GRID ===== */
+    .glossary-grid {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.5rem 2rem 4rem;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 1.2rem;
+    }
+
+    /* ===== CARDS ===== */
+    .term-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 1.4rem;
+      transition: transform 0.2s, border-color 0.2s, box-shadow 0.2s, opacity 0.3s;
+      position: relative;
+      overflow: hidden;
+      animation: fadeIn 0.3s ease forwards;
+    }
+    .term-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 2px;
+      background: var(--card-accent, var(--accent-green));
+    }
+    .term-card:hover {
+      transform: translateY(-3px);
+      border-color: var(--card-accent, var(--accent-green));
+      box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+      background: var(--bg-card-hover);
+    }
+    .term-card.hidden {
+      display: none;
+    }
+    .term-card.fade-out {
+      opacity: 0;
+      transform: translateY(4px);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      margin-bottom: 0.8rem;
+      gap: 8px;
+    }
+    .term-name {
+      font-size: 1.15rem;
+      font-weight: 700;
+      color: var(--accent-green);
+      text-shadow: 0 0 8px rgba(0,255,65,0.3);
+      line-height: 1.3;
+      flex: 1;
+    }
+    .cat-badge {
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      white-space: nowrap;
+      flex-shrink: 0;
+    }
+    .badge-ataques    { background: rgba(255,68,68,0.15); color: #ff6666; border: 1px solid #ff4444; }
+    .badge-defensas   { background: rgba(0,255,65,0.1);  color: var(--accent-green); border: 1px solid var(--accent-green); }
+    .badge-protocolos { background: rgba(0,212,255,0.1); color: var(--accent-cyan); border: 1px solid var(--accent-cyan); }
+    .badge-herramientas{ background: rgba(191,0,255,0.1); color: #d966ff; border: 1px solid #bf00ff; }
+    .badge-conceptos  { background: rgba(255,170,0,0.1); color: #ffcc44; border: 1px solid #ffaa00; }
+
+    .term-def {
+      font-size: 0.875rem;
+      color: var(--text-muted);
+      line-height: 1.6;
+      margin-bottom: 1rem;
+    }
+
+    .difficulty {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .diff-label {
+      font-size: 0.72rem;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .diff-dots {
+      display: flex;
+      gap: 4px;
+    }
+    .diff-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: var(--border-color);
+      border: 1px solid var(--border-color);
+    }
+    .diff-dot.filled { background: var(--dot-color, var(--accent-green)); border-color: var(--dot-color, var(--accent-green)); box-shadow: 0 0 4px var(--dot-color, var(--accent-green)); }
+
+    /* Difficulty color coding */
+    .diff-basico   { --dot-color: var(--accent-green); }
+    .diff-intermedio { --dot-color: var(--warning); }
+    .diff-avanzado { --dot-color: var(--danger); }
+
+    /* Empty state */
+    .empty-state {
+      display: none;
+      grid-column: 1 / -1;
+      text-align: center;
+      padding: 4rem 2rem;
+      color: var(--text-muted);
+    }
+    .empty-state .empty-icon { font-size: 3rem; margin-bottom: 1rem; }
+    .empty-state p { font-size: 1rem; }
+
+    /* ===== RESPONSIVE ===== */
+    @media (max-width: 768px) {
+      .navbar { padding: 0 1rem; }
+      .navbar-links { display: none; }
+      .glossary-grid { grid-template-columns: 1fr; padding: 1rem; }
+      .page-header h1 { font-size: 1.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- NAVBAR -->
+<nav class="navbar">
+  <a href="dashboard.html" class="navbar-brand">🛡️ Cyber<span>Learn</span></a>
+  <ul class="navbar-links">
+    <li><a href="dashboard.html">Dashboard</a></li>
+    <li><a href="quiz.html">Quiz</a></li>
+    <li><a href="glosario.html" class="active">Glosario</a></li>
+    <li><a href="vulnerabilidades.html">Vulnerabilidades</a></li>
+  </ul>
+  <div class="navbar-user">
+    <span id="navUsername">👤 Usuario</span>
+    <button class="logout-btn" onclick="logout()">Salir</button>
+  </div>
+</nav>
+
+<!-- PAGE HEADER -->
+<header class="page-header">
+  <h1>⚡ GLOSARIO</h1>
+  <p>Diccionario interactivo de términos de ciberseguridad. Aprende el vocabulario esencial del hacking ético y la defensa digital.</p>
+</header>
+
+<!-- CONTROLS -->
+<div class="controls">
+  <!-- Search -->
+  <div class="search-wrapper">
+    <span class="search-icon">🔍</span>
+    <input type="text" id="searchInput" placeholder="Buscar término..." autocomplete="off" />
+  </div>
+
+  <!-- Category Filter -->
+  <div class="filter-row">
+    <span class="filter-label">Categoría:</span>
+    <button class="cat-btn active" data-cat="todos">Todos</button>
+    <button class="cat-btn" data-cat="ataques">⚔️ Ataques</button>
+    <button class="cat-btn" data-cat="defensas">🛡️ Defensas</button>
+    <button class="cat-btn" data-cat="protocolos">🌐 Protocolos</button>
+    <button class="cat-btn" data-cat="herramientas">🔧 Herramientas</button>
+    <button class="cat-btn" data-cat="conceptos">💡 Conceptos</button>
+  </div>
+
+  <!-- Alphabet Filter -->
+  <div class="alpha-row" id="alphaRow"></div>
+
+  <!-- Counter -->
+  <div class="counter" id="counter">Mostrando <strong id="visibleCount">0</strong> de <strong id="totalCount">0</strong> términos</div>
+</div>
+
+<!-- GRID -->
+<div class="glossary-grid" id="glossaryGrid">
+  <div class="empty-state" id="emptyState">
+    <div class="empty-icon">🔎</div>
+    <p>No se encontraron términos con ese criterio.</p>
+  </div>
+</div>
+
+<script src="js/auth.js"></script>
+<script>
+/* ============================================================
+   GLOSSARY DATA  –  50 términos en español
+   ============================================================ */
+const terms = [
+  /* ── ATAQUES ── */
+  {
+    name: "Phishing",
+    category: "ataques",
+    def: "Técnica de engaño en la que el atacante suplanta una entidad legítima (banco, empresa, etc.) mediante correos o sitios web falsos para robar credenciales. Es uno de los vectores de ataque más utilizados en el mundo. Las víctimas son dirigidas a páginas fraudulentas casi idénticas a las originales.",
+    difficulty: "basico"
+  },
+  {
+    name: "Spear Phishing",
+    category: "ataques",
+    def: "Variante avanzada del phishing donde el atacante personaliza el mensaje para un objetivo específico usando información previa sobre la víctima. Es mucho más efectivo que el phishing genérico porque el correo parece legítimo y relevante. Se usa habitualmente en ataques dirigidos a empresas.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Ransomware",
+    category: "ataques",
+    def: "Tipo de malware que cifra los archivos de la víctima y exige un rescate económico (normalmente en criptomonedas) para proporcionar la clave de descifrado. Ataques famosos como WannaCry paralizaron hospitales y empresas en todo el mundo. No pagar el rescate es siempre la recomendación oficial.",
+    difficulty: "basico"
+  },
+  {
+    name: "Malware",
+    category: "ataques",
+    def: "Término genérico para cualquier software diseñado con intenciones maliciosas, incluyendo virus, troyanos, gusanos, spyware y ransomware. Puede robar datos, dañar sistemas o tomar el control del equipo infectado. Se distribuye a través de descargas, correos y vulnerabilidades del sistema.",
+    difficulty: "basico"
+  },
+  {
+    name: "Troyano",
+    category: "ataques",
+    def: "Malware que se disfraza de software legítimo para engañar al usuario y lograr que lo instale voluntariamente. Una vez ejecutado, abre una puerta trasera que permite al atacante controlar el sistema. Su nombre proviene del Caballo de Troya de la mitología griega.",
+    difficulty: "basico"
+  },
+  {
+    name: "Gusano (Worm)",
+    category: "ataques",
+    def: "Tipo de malware autorreplicante que se propaga automáticamente a través de redes sin necesidad de intervención humana. A diferencia de los virus, no necesita adjuntarse a un archivo existente. Puede consumir grandes cantidades de ancho de banda y recursos del sistema.",
+    difficulty: "basico"
+  },
+  {
+    name: "Rootkit",
+    category: "ataques",
+    def: "Conjunto de herramientas maliciosas que se instalan a nivel del sistema operativo o del kernel para ocultar la presencia del atacante y otros programas maliciosos. Son extremadamente difíciles de detectar porque operan por debajo de los antivirus convencionales. Su eliminación a menudo requiere formatear el equipo.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "Keylogger",
+    category: "ataques",
+    def: "Software o hardware que registra en secreto cada tecla pulsada por el usuario, incluyendo contraseñas, mensajes y datos bancarios. Puede ser instalado por malware o físicamente en el teclado. Los datos registrados se envían al atacante de forma remota.",
+    difficulty: "basico"
+  },
+  {
+    name: "DDoS",
+    category: "ataques",
+    def: "Ataque de Denegación de Servicio Distribuido que satura un servidor o red con una avalancha de tráfico proveniente de múltiples fuentes (generalmente una botnet) hasta dejarlo inaccesible. Los servicios afectados pueden estar caídos durante horas o días. Es un arma habitual en conflictos entre hacktivistas.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Man-in-the-Middle",
+    category: "ataques",
+    def: "Ataque en el que el atacante se interpone secretamente en la comunicación entre dos partes, pudiendo leer, modificar o inyectar mensajes sin que ninguno de los dos lo sepa. Se usa para robar credenciales o manipular transacciones. HTTPS y certificados digitales mitigan este riesgo.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "SQL Injection",
+    category: "ataques",
+    def: "Vulnerabilidad que permite a un atacante insertar código SQL malicioso en campos de entrada de una aplicación, manipulando así la base de datos subyacente. Puede usarse para autenticarse sin credenciales, extraer datos o eliminar tablas enteras. Es una de las vulnerabilidades OWASP Top 10 más críticas.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "XSS (Cross-Site Scripting)",
+    category: "ataques",
+    def: "Vulnerabilidad que permite inyectar scripts maliciosos en páginas web vistas por otros usuarios. El script se ejecuta en el navegador de la víctima con los permisos del sitio legítimo, pudiendo robar cookies de sesión. Existen tres tipos: Stored, Reflected y DOM-based.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "CSRF",
+    category: "ataques",
+    def: "Cross-Site Request Forgery: ataque que engaña al navegador de un usuario autenticado para que ejecute acciones no deseadas en una aplicación web. El atacante hace que la víctima envíe una solicitud legítima sin saberlo, como una transferencia bancaria. Se previene con tokens CSRF únicos por sesión.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "Fuerza Bruta",
+    category: "ataques",
+    def: "Técnica de ataque que prueba sistemáticamente todas las combinaciones posibles de contraseñas o claves hasta encontrar la correcta. Es efectivo contra contraseñas débiles o cortas. Herramientas como Hydra o John the Ripper automatizan este proceso.",
+    difficulty: "basico"
+  },
+  {
+    name: "Zero-Day",
+    category: "ataques",
+    def: "Vulnerabilidad desconocida para el fabricante del software que aún no tiene parche disponible. Los atacantes la explotan antes de que sea descubierta y corregida. Son extremadamente valiosas y se venden en mercados clandestinos por cientos de miles de dólares.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "Exploit",
+    category: "ataques",
+    def: "Código o técnica que aprovecha una vulnerabilidad específica de un sistema o aplicación para provocar un comportamiento no deseado. Puede usarse para obtener acceso no autorizado, escalar privilegios o ejecutar código arbitrario. Pueden ser públicos (CVE) o privados (0-day).",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Backdoor",
+    category: "ataques",
+    def: "Acceso secreto intencionalmente insertado en un sistema o aplicación que permite saltarse los mecanismos de autenticación normales. Puede ser dejado por el atacante tras comprometer un sistema o incluido maliciosamente en el software desde su desarrollo. Es la base de muchos ataques persistentes.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Botnet",
+    category: "ataques",
+    def: "Red de dispositivos infectados (bots o zombis) controlados remotamente por un atacante desde un servidor C&C (Comando y Control). Se usan para lanzar ataques DDoS, enviar spam o minar criptomonedas. Los propietarios de los dispositivos infectados generalmente no son conscientes de ello.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Spyware",
+    category: "ataques",
+    def: "Software malicioso que recopila información del usuario sin su consentimiento y la envía al atacante. Puede monitorizar actividad web, contraseñas, datos bancarios e incluso activar la cámara o micrófono. Se instala generalmente de forma encubierta junto a otro software.",
+    difficulty: "basico"
+  },
+  {
+    name: "Adware",
+    category: "ataques",
+    def: "Software que muestra publicidad no deseada de forma intrusiva, generalmente en el navegador o el escritorio. Aunque no siempre es malicioso, puede ralentizar el sistema y redirigir el tráfico web. En su forma más agresiva, puede actuar como spyware recopilando datos del usuario.",
+    difficulty: "basico"
+  },
+
+  /* ── DEFENSAS ── */
+  {
+    name: "Firewall",
+    category: "defensas",
+    def: "Sistema de seguridad que monitoriza y controla el tráfico de red entrante y saliente basándose en reglas de seguridad predefinidas. Puede ser hardware, software o una combinación de ambos. Establece una barrera entre redes de confianza y redes no confiables como Internet.",
+    difficulty: "basico"
+  },
+  {
+    name: "Antivirus",
+    category: "defensas",
+    def: "Software diseñado para detectar, prevenir y eliminar malware de un sistema informático. Utiliza bases de datos de firmas conocidas y análisis heurístico para identificar amenazas nuevas. Los antivirus modernos incluyen protección en tiempo real y análisis en la nube.",
+    difficulty: "basico"
+  },
+  {
+    name: "IDS/IPS",
+    category: "defensas",
+    def: "Sistema de Detección/Prevención de Intrusiones que monitoriza el tráfico de red buscando actividades sospechosas. El IDS solo alerta, mientras que el IPS toma medidas activas para bloquear el ataque. Son complementarios al firewall y esenciales en redes corporativas.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "WAF",
+    category: "defensas",
+    def: "Web Application Firewall: protege aplicaciones web filtrando y monitorizando el tráfico HTTP/HTTPS. Defiende contra ataques como SQL Injection, XSS y CSRF que los firewalls tradicionales no pueden detectar. Puede operar en modo detección o en modo bloqueo activo.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "2FA / MFA",
+    category: "defensas",
+    def: "Autenticación de Dos o Múltiples Factores: requiere que el usuario demuestre su identidad con dos o más evidencias de categorías distintas (algo que sabe, algo que tiene, algo que es). Reduce drásticamente el riesgo de acceso no autorizado aunque la contraseña sea robada. Es una de las medidas de seguridad más eficaces y sencillas de implementar.",
+    difficulty: "basico"
+  },
+  {
+    name: "DMZ",
+    category: "defensas",
+    def: "Zona Desmilitarizada: segmento de red semi-privado que actúa como zona tampón entre la red interna segura y la Internet pública. Aloja servidores accesibles desde Internet (web, correo) sin exponer la red interna. Si un servidor en la DMZ es comprometido, el atacante no accede directamente a la intranet.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Honeypot",
+    category: "defensas",
+    def: "Sistema señuelo intencionalmente vulnerable diseñado para atraer atacantes y estudiar sus técnicas sin riesgo real. Permite recopilar inteligencia sobre los métodos y herramientas usados por los adversarios. Los datos obtenidos mejoran las defensas de los sistemas reales.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "SIEM",
+    category: "defensas",
+    def: "Security Information and Event Management: plataforma que centraliza, correlaciona y analiza eventos de seguridad de múltiples fuentes en tiempo real. Permite detectar patrones de ataque complejos que fuentes individuales no detectarían. Herramientas como Splunk o IBM QRadar son ejemplos populares.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "Sandboxing",
+    category: "defensas",
+    def: "Técnica de seguridad que ejecuta código o aplicaciones en un entorno aislado para analizar su comportamiento sin afectar al sistema real. Es la base del análisis dinámico de malware. Herramientas como Cuckoo Sandbox permiten estudiar amenazas en un entorno controlado.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Gestión de Parches",
+    category: "defensas",
+    def: "Proceso sistemático de identificar, adquirir, probar e instalar actualizaciones (parches) de software para corregir vulnerabilidades conocidas. Mantener los sistemas actualizados es una de las defensas más efectivas contra ataques. La falta de parcheo fue la causa del devastador ataque WannaCry en 2017.",
+    difficulty: "basico"
+  },
+
+  /* ── PROTOCOLOS ── */
+  {
+    name: "HTTPS / TLS",
+    category: "protocolos",
+    def: "HTTP Seguro que utiliza el protocolo TLS (Transport Layer Security) para cifrar las comunicaciones entre el navegador y el servidor web. Garantiza confidencialidad, integridad y autenticación del servidor mediante certificados digitales. El candado verde en el navegador indica su uso.",
+    difficulty: "basico"
+  },
+  {
+    name: "SSH",
+    category: "protocolos",
+    def: "Secure Shell: protocolo de red que permite acceder y administrar sistemas remotos de forma segura mediante cifrado. Sustituyó a Telnet, que transmitía todo en texto plano. El puerto estándar es el 22 y soporta autenticación con contraseña o con par de claves pública/privada.",
+    difficulty: "basico"
+  },
+  {
+    name: "VPN",
+    category: "protocolos",
+    def: "Red Privada Virtual que crea un túnel cifrado entre el cliente y el servidor VPN, ocultando el tráfico a terceros. Se usa para proteger la privacidad en redes públicas y para acceder a redes corporativas remotamente. Los protocolos comunes son OpenVPN, WireGuard e IPSec.",
+    difficulty: "basico"
+  },
+  {
+    name: "IPSec",
+    category: "protocolos",
+    def: "Suite de protocolos que autentica y cifra paquetes IP a nivel de red, comúnmente usada para implementar VPNs. Opera en dos modos: Transporte (cifra sólo el payload) y Túnel (cifra el paquete completo). Es el estándar para VPNs corporativas y en comunicaciones entre routers.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "DNS",
+    category: "protocolos",
+    def: "Domain Name System: sistema que traduce nombres de dominio legibles (google.com) a direcciones IP numéricas (142.250.x.x). Es una infraestructura crítica de Internet y objetivo frecuente de ataques como DNS Spoofing o DNS Hijacking. Opera principalmente en el puerto UDP 53.",
+    difficulty: "basico"
+  },
+  {
+    name: "DNSSEC",
+    category: "protocolos",
+    def: "DNS Security Extensions: extensión del protocolo DNS que añade firmas digitales a las respuestas DNS para verificar su autenticidad e integridad. Previene ataques de envenenamiento de caché DNS (DNS Cache Poisoning). Aunque muy eficaz, su adopción global aún es limitada.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "SFTP",
+    category: "protocolos",
+    def: "SSH File Transfer Protocol: protocolo para la transferencia segura de archivos que usa el canal cifrado de SSH. A diferencia del FTP tradicional, toda la comunicación (incluyendo credenciales) va cifrada. Es el estándar recomendado para transferencia de archivos en entornos seguros.",
+    difficulty: "basico"
+  },
+  {
+    name: "Kerberos",
+    category: "protocolos",
+    def: "Protocolo de autenticación de red basado en tickets que permite a los usuarios autenticarse en servicios de forma segura sin transmitir contraseñas por la red. Es el sistema de autenticación central en entornos Windows/Active Directory. Los ataques como Pass-the-Ticket y Kerberoasting lo explotan.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "OAuth",
+    category: "protocolos",
+    def: "Protocolo estándar de autorización que permite a aplicaciones de terceros acceder a recursos de un usuario sin conocer su contraseña. Es la base del 'Iniciar sesión con Google/Facebook'. La versión actual OAuth 2.0 es ampliamente usada en APIs REST modernas.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "JWT",
+    category: "protocolos",
+    def: "JSON Web Token: estándar para transmitir información entre partes como un objeto JSON firmado digitalmente. Se usa frecuentemente para autenticación en APIs REST, siendo el token enviado en el header Authorization. Vulnerabilidades como el 'none algorithm attack' pueden comprometer su seguridad si no se implementa correctamente.",
+    difficulty: "intermedio"
+  },
+
+  /* ── HERRAMIENTAS ── */
+  {
+    name: "Nmap",
+    category: "herramientas",
+    def: "Network Mapper: herramienta de código abierto para exploración de redes y auditoría de seguridad. Permite descubrir hosts activos, puertos abiertos, servicios en ejecución y sistemas operativos. Es una herramienta fundamental en el kit de cualquier pentester.",
+    difficulty: "basico"
+  },
+  {
+    name: "Wireshark",
+    category: "herramientas",
+    def: "Analizador de paquetes de red (sniffer) con interfaz gráfica que captura y examina el tráfico en tiempo real. Permite diseccionar cientos de protocolos y filtrar paquetes de forma precisa. Es indispensable para análisis forense de red y detección de comunicaciones maliciosas.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Metasploit",
+    category: "herramientas",
+    def: "Framework de código abierto para desarrollo y ejecución de exploits contra sistemas remotos. Contiene una enorme base de datos de exploits, payloads y módulos auxiliares listos para usar. Es la herramienta estándar en tests de penetración profesionales y certificaciones como OSCP.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "Burp Suite",
+    category: "herramientas",
+    def: "Plataforma integrada para pruebas de seguridad en aplicaciones web, que actúa como proxy interceptor del tráfico HTTP/HTTPS. Permite modificar peticiones, automatizar ataques y descubrir vulnerabilidades como SQLi, XSS o IDOR. La versión Professional incluye un escáner automatizado de vulnerabilidades.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "John the Ripper",
+    category: "herramientas",
+    def: "Herramienta gratuita de crackeo de contraseñas diseñada para detectar contraseñas débiles en entornos Unix/Linux. Soporta múltiples formatos de hash y ataques de diccionario, fuerza bruta e híbridos. Es ampliamente usada en auditorías de seguridad para verificar la robustez de las contraseñas almacenadas.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Hashcat",
+    category: "herramientas",
+    def: "Herramienta avanzada de recuperación de contraseñas que usa GPU para acelerar el crackeo de hashes a velocidades altísimas. Soporta más de 300 algoritmos de hash diferentes. Es considerada la herramienta de crackeo de contraseñas más rápida del mundo.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Aircrack-ng",
+    category: "herramientas",
+    def: "Suite de herramientas para auditoría de seguridad en redes Wi-Fi que permite capturar handshakes WPA/WPA2, inyectar paquetes y crackear claves WEP/WPA. Es la herramienta estándar para evaluar la seguridad de redes inalámbricas. Requiere una tarjeta de red compatible con modo monitor.",
+    difficulty: "intermedio"
+  },
+
+  /* ── CONCEPTOS ── */
+  {
+    name: "Ingeniería Social",
+    category: "conceptos",
+    def: "Conjunto de técnicas psicológicas usadas para manipular a personas y obtener información confidencial o acceso no autorizado. Explota la confianza, el miedo o la urgencia en lugar de vulnerabilidades técnicas. El phishing es el ejemplo más común, pero también incluye vishing (voz) y baiting (físico).",
+    difficulty: "basico"
+  },
+  {
+    name: "Criptografía Simétrica",
+    category: "conceptos",
+    def: "Sistema criptográfico donde la misma clave se usa tanto para cifrar como para descifrar la información. Es muy rápida y eficiente para grandes volúmenes de datos. Los algoritmos más usados son AES-256 y ChaCha20. El principal reto es compartir la clave de forma segura.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Criptografía Asimétrica",
+    category: "conceptos",
+    def: "Sistema que usa un par de claves matemáticamente relacionadas: una clave pública (para cifrar) y una privada (para descifrar). Resuelve el problema del intercambio de claves de la criptografía simétrica. Es la base de HTTPS, SSH, firmas digitales y PGP. RSA y ECC son los algoritmos más comunes.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "Hashing",
+    category: "conceptos",
+    def: "Función matemática unidireccional que transforma cualquier dato en una cadena de longitud fija (hash o digest). Es irreversible: no se puede obtener el dato original a partir del hash. Se usa para almacenar contraseñas, verificar integridad de archivos y en blockchain. SHA-256 y bcrypt son algoritmos estándar.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Certificado Digital",
+    category: "conceptos",
+    def: "Documento electrónico firmado por una Autoridad de Certificación (CA) que vincula una clave pública con la identidad de su propietario. Es la base de HTTPS y permite verificar que un sitio web es quien dice ser. Contiene información como el dominio, la organización, la fecha de expiración y la firma de la CA.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "PKI",
+    category: "conceptos",
+    def: "Infraestructura de Clave Pública: conjunto de roles, políticas, hardware, software y procedimientos para gestionar certificados digitales y claves públicas. Establece la cadena de confianza desde la CA raíz hasta el certificado final del sitio web. Es la columna vertebral de la seguridad en Internet.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "OSINT",
+    category: "conceptos",
+    def: "Open Source Intelligence: recopilación y análisis de información de fuentes públicas y abiertas (redes sociales, registros WHOIS, bases de datos públicas, etc.). Es la primera fase de cualquier ataque o test de penetración. Herramientas como Maltego, Shodan o theHarvester automatizan la recopilación.",
+    difficulty: "basico"
+  },
+  {
+    name: "Pentest",
+    category: "conceptos",
+    def: "Test de Penetración o Pentesting: proceso autorizado y controlado de simular un ciberataque contra un sistema para identificar vulnerabilidades antes de que lo hagan atacantes reales. Sigue fases: reconocimiento, escaneo, explotación, post-explotación e informe. Es la base del hacking ético profesional.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "Red Team",
+    category: "conceptos",
+    def: "Equipo de expertos en seguridad ofensiva que simula ataques reales contra una organización para evaluar sus defensas de forma integral. Van más allá del pentest incluyendo ingeniería social, intrusión física y ataques persistentes avanzados (APT). Trabajan en oposición al Blue Team.",
+    difficulty: "avanzado"
+  },
+  {
+    name: "Blue Team",
+    category: "conceptos",
+    def: "Equipo de seguridad defensiva encargado de proteger los sistemas de una organización, detectar intrusiones y responder ante incidentes. Monitoriza redes, gestiona SIEMs, implementa parches y desarrolla planes de respuesta a incidentes. Es el complemento defensivo del Red Team.",
+    difficulty: "intermedio"
+  },
+  {
+    name: "CTF",
+    category: "conceptos",
+    def: "Capture The Flag: competición de ciberseguridad donde los participantes resuelven retos de hacking para encontrar una cadena de texto oculta (la bandera). Es la mejor forma de aprender hacking ético de manera práctica y legal. Plataformas como HackTheBox, TryHackMe o CTFtime.org organizan cientos de competiciones.",
+    difficulty: "basico"
+  },
+  {
+    name: "CVE",
+    category: "conceptos",
+    def: "Common Vulnerabilities and Exposures: sistema estándar de identificación de vulnerabilidades de seguridad conocidas públicamente. Cada vulnerabilidad recibe un identificador único en formato CVE-AÑO-NÚMERO (ej: CVE-2021-44228 para Log4Shell). La base de datos pública NVD (nvd.nist.gov) cataloga todos los CVEs.",
+    difficulty: "basico"
+  },
+  {
+    name: "CVSS",
+    category: "conceptos",
+    def: "Common Vulnerability Scoring System: estándar de puntuación para clasificar la gravedad de vulnerabilidades de seguridad en una escala de 0 a 10. Considera factores como la complejidad del ataque, los privilegios requeridos y el impacto en confidencialidad, integridad y disponibilidad. Facilita la priorización de parches.",
+    difficulty: "intermedio"
+  }
+];
+
+/* ============================================================
+   RENDER ENGINE
+   ============================================================ */
+let currentCat   = 'todos';
+let currentAlpha = null;
+let searchQuery  = '';
+
+const grid         = document.getElementById('glossaryGrid');
+const emptyState   = document.getElementById('emptyState');
+const visibleCount = document.getElementById('visibleCount');
+const totalCount   = document.getElementById('totalCount');
+totalCount.textContent = terms.length;
+
+// Map category -> card accent color
+const catColors = {
+  ataques:     '#ff4444',
+  defensas:    '#00ff41',
+  protocolos:  '#00d4ff',
+  herramientas:'#bf00ff',
+  conceptos:   '#ffaa00'
+};
+
+// Difficulty label
+const diffLabels = { basico:'Básico', intermedio:'Intermedio', avanzado:'Avanzado' };
+const diffMax    = { basico:1, intermedio:2, avanzado:3 };
+
+function buildCard(term) {
+  const accent = catColors[term.category];
+  const filled = diffMax[term.difficulty] || 1;
+  let dots = '';
+  for (let i = 1; i <= 3; i++) {
+    dots += `<span class="diff-dot ${i <= filled ? 'filled' : ''}"></span>`;
+  }
+
+  const card = document.createElement('div');
+  card.className = 'term-card';
+  card.style.setProperty('--card-accent', accent);
+  card.dataset.cat   = term.category;
+  card.dataset.name  = term.name.toLowerCase();
+  card.dataset.def   = term.def.toLowerCase();
+  card.dataset.first = term.name[0].toUpperCase();
+
+  card.innerHTML = `
+    <div class="card-header">
+      <div class="term-name">${term.name}</div>
+      <span class="cat-badge badge-${term.category}">${term.category}</span>
+    </div>
+    <p class="term-def">${term.def}</p>
+    <div class="difficulty diff-${term.difficulty}">
+      <span class="diff-label">${diffLabels[term.difficulty]}</span>
+      <div class="diff-dots" style="--dot-color:${accent}">${dots}</div>
+    </div>
+  `;
+  return card;
+}
+
+// Build all cards once
+const allCards = terms.map(t => buildCard(t));
+allCards.forEach(c => grid.insertBefore(c, emptyState));
+
+function applyFilters() {
+  let visible = 0;
+  allCards.forEach(card => {
+    const matchCat   = currentCat === 'todos' || card.dataset.cat === currentCat;
+    const matchAlpha = !currentAlpha || card.dataset.first === currentAlpha;
+    const matchSearch = !searchQuery ||
+      card.dataset.name.includes(searchQuery) ||
+      card.dataset.def.includes(searchQuery);
+
+    if (matchCat && matchAlpha && matchSearch) {
+      card.classList.remove('hidden');
+      visible++;
+    } else {
+      card.classList.add('hidden');
+    }
+  });
+
+  visibleCount.textContent = visible;
+  emptyState.style.display = visible === 0 ? 'block' : 'none';
+}
+
+/* ── Alphabet buttons ── */
+const alphaRow = document.getElementById('alphaRow');
+const letters  = [...new Set(terms.map(t => t.name[0].toUpperCase()))].sort();
+const allLetters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+
+allLetters.forEach(l => {
+  const btn = document.createElement('button');
+  btn.className = 'alpha-btn' + (letters.includes(l) ? '' : ' disabled');
+  btn.textContent = l;
+  btn.dataset.letter = l;
+  if (letters.includes(l)) {
+    btn.addEventListener('click', () => {
+      if (currentAlpha === l) {
+        currentAlpha = null;
+        btn.classList.remove('active');
+      } else {
+        document.querySelectorAll('.alpha-btn.active').forEach(b => b.classList.remove('active'));
+        currentAlpha = l;
+        btn.classList.add('active');
+      }
+      applyFilters();
+    });
+  }
+  alphaRow.appendChild(btn);
+});
+
+/* ── Category buttons ── */
+document.querySelectorAll('.cat-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.cat-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentCat = btn.dataset.cat;
+    applyFilters();
+  });
+});
+
+/* ── Search ── */
+document.getElementById('searchInput').addEventListener('input', e => {
+  searchQuery = e.target.value.toLowerCase().trim();
+  applyFilters();
+});
+
+/* ── Initial render ── */
+applyFilters();
+
+/* ============================================================
+   AUTH
+   ============================================================ */
+function logout() {
+  if (window.Auth && typeof window.Auth.logout === 'function') {
+    window.Auth.logout();
+  } else {
+    localStorage.removeItem('cyberlearn_session');
+    localStorage.removeItem('cybersec_user');
+    window.location.href = 'index.html';
+  }
+}
+
+// Update navbar username and guard route
+(function initUser() {
+  if (window.Auth && !window.Auth.isLoggedIn()) {
+    window.location.href = 'index.html';
+    return;
+  }
+  const session = window.Auth ? window.Auth.getSession() : null;
+  const username = session ? session.username : 'Hacker';
+  const el = document.getElementById('navUsername');
+  if (el) el.textContent = '👤 ' + username;
+})();
+</script>
+</body>
+</html>

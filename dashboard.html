@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Dashboard – CyberLearn</title>
+  <link rel="stylesheet" href="css/style.css" />
+  <style>
+    /* ── Reset & Base ── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #0a0a0f;
+      --bg2:       #0f0f1a;
+      --bg3:       #141428;
+      --card:      #12122a;
+      --border:    #1e1e4a;
+      --accent:    #00f5ff;
+      --accent2:   #7b2fff;
+      --accent3:   #ff2d78;
+      --green:     #00ff88;
+      --yellow:    #ffe500;
+      --text:      #e0e0ff;
+      --text-dim:  #6b6b9a;
+      --glow:      0 0 18px rgba(0,245,255,.45);
+      --glow2:     0 0 18px rgba(123,47,255,.45);
+      --radius:    12px;
+      --font:      'Courier New', 'Consolas', monospace;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: var(--font);
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Matrix Rain Canvas ── */
+    #matrix-canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      opacity: .07;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Navbar ── */
+    .navbar {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(10,10,20,.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: .75rem 2rem;
+      gap: 1rem;
+    }
+
+    .nav-logo {
+      font-size: 1.4rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: var(--glow);
+      text-decoration: none;
+      white-space: nowrap;
+      letter-spacing: 1px;
+    }
+
+    .nav-right {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      flex-wrap: wrap;
+    }
+
+    .nav-user {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: .4rem .8rem;
+      font-size: .85rem;
+      color: var(--text);
+    }
+
+    .nav-user .avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      display: flex; align-items: center; justify-content: center;
+      font-size: .8rem; font-weight: 700; color: #fff;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .5rem 1.1rem;
+      border-radius: 8px;
+      border: 1px solid transparent;
+      font-family: var(--font);
+      font-size: .85rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all .22s;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+
+    .btn-logout {
+      background: transparent;
+      border-color: var(--accent3);
+      color: var(--accent3);
+    }
+    .btn-logout:hover {
+      background: var(--accent3);
+      color: #fff;
+      box-shadow: 0 0 14px rgba(255,45,120,.5);
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, var(--accent2), var(--accent));
+      color: #fff;
+      border-color: var(--accent);
+    }
+    .btn-primary:hover {
+      box-shadow: var(--glow);
+      transform: translateY(-2px);
+    }
+
+    .btn-secondary {
+      background: transparent;
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+    .btn-secondary:hover {
+      background: rgba(0,245,255,.1);
+      box-shadow: var(--glow);
+    }
+
+    .btn-green {
+      background: transparent;
+      border-color: var(--green);
+      color: var(--green);
+    }
+    .btn-green:hover {
+      background: rgba(0,255,136,.1);
+      box-shadow: 0 0 14px rgba(0,255,136,.4);
+    }
+
+    /* ── Main Content ── */
+    .main {
+      position: relative;
+      z-index: 1;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 2rem 1.5rem 4rem;
+    }
+
+    /* ── Welcome Section ── */
+    .welcome-section {
+      text-align: center;
+      margin-bottom: 2.5rem;
+      padding: 2.5rem 1rem;
+      background: linear-gradient(135deg, rgba(0,245,255,.05), rgba(123,47,255,.08));
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      position: relative;
+      overflow: hidden;
+    }
+
+    .welcome-section::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        rgba(0,245,255,.02) 2px,
+        rgba(0,245,255,.02) 4px
+      );
+      pointer-events: none;
+    }
+
+    .welcome-title {
+      font-size: clamp(1.4rem, 4vw, 2.2rem);
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: var(--glow);
+      margin-bottom: .5rem;
+      min-height: 2.8rem;
+    }
+
+    .welcome-title .cursor {
+      display: inline-block;
+      width: 2px;
+      height: 1em;
+      background: var(--accent);
+      margin-left: 2px;
+      vertical-align: middle;
+      animation: blink .7s step-end infinite;
+    }
+
+    @keyframes blink { 50% { opacity: 0; } }
+
+    .welcome-sub {
+      color: var(--text-dim);
+      font-size: .95rem;
+    }
+
+    /* ── Stats Bar ── */
+    .stats-bar {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 1rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .stat-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.2rem 1rem;
+      text-align: center;
+      transition: border-color .22s, transform .22s;
+      cursor: default;
+    }
+
+    .stat-card:hover {
+      border-color: var(--accent);
+      transform: translateY(-3px);
+      box-shadow: var(--glow);
+    }
+
+    .stat-value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-shadow: var(--glow);
+      display: block;
+    }
+
+    .stat-label {
+      font-size: .75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-top: .3rem;
+    }
+
+    /* ── Section Title ── */
+    .section-title {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--accent);
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      margin-bottom: 1.2rem;
+      display: flex;
+      align-items: center;
+      gap: .6rem;
+    }
+
+    .section-title::after {
+      content: '';
+      flex: 1;
+      height: 1px;
+      background: linear-gradient(to right, var(--accent), transparent);
+    }
+
+    /* ── Tool Cards Grid ── */
+    .tools-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+      gap: 1.5rem;
+      margin-bottom: 2.5rem;
+    }
+
+    .tool-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.6rem;
+      transition: all .28s;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .tool-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--accent2), var(--accent));
+      transform: scaleX(0);
+      transition: transform .28s;
+    }
+
+    .tool-card:hover::before { transform: scaleX(1); }
+
+    .tool-card:hover {
+      border-color: var(--accent);
+      box-shadow: var(--glow);
+      transform: translateY(-4px);
+    }
+
+    .tool-icon {
+      font-size: 2.4rem;
+      margin-bottom: 1rem;
+      display: block;
+    }
+
+    .tool-name {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text);
+      margin-bottom: .4rem;
+    }
+
+    .tool-desc {
+      font-size: .85rem;
+      color: var(--text-dim);
+      margin-bottom: 1rem;
+      line-height: 1.5;
+    }
+
+    .tool-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: .5rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .tag {
+      background: rgba(0,245,255,.08);
+      border: 1px solid rgba(0,245,255,.2);
+      color: var(--accent);
+      border-radius: 20px;
+      padding: .15rem .6rem;
+      font-size: .72rem;
+    }
+
+    .tag-purple {
+      background: rgba(123,47,255,.08);
+      border-color: rgba(123,47,255,.3);
+      color: var(--accent2);
+    }
+
+    .tag-green {
+      background: rgba(0,255,136,.08);
+      border-color: rgba(0,255,136,.3);
+      color: var(--green);
+    }
+
+    .tag-pink {
+      background: rgba(255,45,120,.08);
+      border-color: rgba(255,45,120,.3);
+      color: var(--accent3);
+    }
+
+    /* ── Recent Activity ── */
+    .activity-list {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      overflow: hidden;
+      margin-bottom: 2.5rem;
+    }
+
+    .activity-item {
+      display: flex;
+      align-items: center;
+      gap: 1rem;
+      padding: .9rem 1.4rem;
+      border-bottom: 1px solid var(--border);
+      transition: background .2s;
+    }
+
+    .activity-item:last-child { border-bottom: none; }
+    .activity-item:hover { background: rgba(0,245,255,.03); }
+
+    .activity-icon {
+      width: 36px; height: 36px;
+      border-radius: 8px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 1.1rem;
+      flex-shrink: 0;
+    }
+
+    .activity-text { flex: 1; }
+    .activity-title { font-size: .88rem; color: var(--text); }
+    .activity-time { font-size: .75rem; color: var(--text-dim); margin-top: .15rem; }
+    .activity-score { font-size: .85rem; color: var(--accent); font-weight: 700; }
+
+    /* ── Tips Section ── */
+    .tips-section {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 1.6rem;
+      margin-bottom: 2.5rem;
+      position: relative;
+    }
+
+    .tip-display {
+      display: flex;
+      align-items: flex-start;
+      gap: 1rem;
+    }
+
+    .tip-icon { font-size: 2rem; flex-shrink: 0; }
+
+    .tip-content { flex: 1; }
+
+    .tip-label {
+      font-size: .7rem;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      color: var(--yellow);
+      margin-bottom: .4rem;
+    }
+
+    .tip-text {
+      font-size: .9rem;
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    .tip-nav {
+      display: flex;
+      justify-content: flex-end;
+      gap: .5rem;
+      margin-top: 1rem;
+    }
+
+    .tip-btn {
+      background: transparent;
+      border: 1px solid var(--border);
+      color: var(--text-dim);
+      border-radius: 6px;
+      padding: .3rem .7rem;
+      cursor: pointer;
+      font-family: var(--font);
+      font-size: .8rem;
+      transition: all .2s;
+    }
+
+    .tip-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      text-align: center;
+      padding: 1.5rem;
+      border-top: 1px solid var(--border);
+      color: var(--text-dim);
+      font-size: .8rem;
+    }
+
+    footer span { color: var(--accent3); }
+
+    /* ── Responsive ── */
+    @media (max-width: 600px) {
+      .navbar { padding: .6rem 1rem; }
+      .main { padding: 1.2rem 1rem 3rem; }
+      .tools-grid { grid-template-columns: 1fr; }
+    }
+
+    /* ── Scanlines overlay ── */
+    body::after {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 3px,
+        rgba(0,0,0,.08) 3px,
+        rgba(0,0,0,.08) 4px
+      );
+      pointer-events: none;
+      z-index: 999;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Matrix Rain -->
+<canvas id="matrix-canvas"></canvas>
+
+<!-- ── Navbar ── -->
+<nav class="navbar">
+  <a href="dashboard.html" class="nav-logo">🛡️ CyberLearn</a>
+  <div class="nav-right">
+    <div class="nav-user">
+      <div class="avatar" id="nav-avatar">?</div>
+      <span id="nav-username">Usuario</span>
+    </div>
+    <button class="btn btn-logout" id="btn-logout">⏻ Salir</button>
+  </div>
+</nav>
+
+<!-- ── Main ── -->
+<main class="main">
+
+  <!-- Welcome -->
+  <section class="welcome-section">
+    <div class="welcome-title" id="welcome-title"><span class="cursor"></span></div>
+    <p class="welcome-sub">Tu plataforma de aprendizaje en ciberseguridad</p>
+  </section>
+
+  <!-- Stats Bar -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <span class="stat-value" id="stat-points">0</span>
+      <span class="stat-label">⭐ Puntos totales</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-quizzes">0</span>
+      <span class="stat-label">🧠 Quiz completados</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-games">0</span>
+      <span class="stat-label">🎮 Juegos superados</span>
+    </div>
+    <div class="stat-card">
+      <span class="stat-value" id="stat-streak">0</span>
+      <span class="stat-label">🔥 Racha de días</span>
+    </div>
+  </div>
+
+  <!-- Tool Cards -->
+  <h2 class="section-title">🛠️ Herramientas de aprendizaje</h2>
+  <div class="tools-grid">
+
+    <!-- Quiz -->
+    <div class="tool-card">
+      <span class="tool-icon">🧠</span>
+      <div class="tool-name">Quiz Interactivo</div>
+      <div class="tool-desc">Pon a prueba tus conocimientos de ciberseguridad con preguntas de múltiple opción. ¿Cuánto sabes realmente?</div>
+      <div class="tool-meta">
+        <span class="tag">Todos los niveles</span>
+        <span class="tag-purple">20 preguntas</span>
+        <span class="tag-green">30s por pregunta</span>
+      </div>
+      <a href="quiz.html" class="btn btn-primary" style="width:100%;justify-content:center;">▶ Jugar Quiz</a>
+    </div>
+
+    <!-- Glosario -->
+    <div class="tool-card">
+      <span class="tool-icon">📚</span>
+      <div class="tool-name">Glosario Interactivo</div>
+      <div class="tool-desc">Aprende los términos clave de la ciberseguridad. Busca, filtra y domina el vocabulario esencial del sector.</div>
+      <div class="tool-meta">
+        <span class="tag">+40 términos</span>
+        <span class="tag-purple">Busqueda live</span>
+        <span class="tag-pink">Con ejemplos</span>
+      </div>
+      <a href="glosario.html" class="btn btn-secondary" style="width:100%;justify-content:center;">📖 Ver Glosario</a>
+    </div>
+
+    <!-- Vulnerabilidades -->
+    <div class="tool-card">
+      <span class="tool-icon">🐛</span>
+      <div class="tool-name">Caza Vulnerabilidades</div>
+      <div class="tool-desc">Encuentra el fallo en el código. Desafíos prácticos con código real para desarrollar tu ojo clínico en seguridad.</div>
+      <div class="tool-meta">
+        <span class="tag">8 desafíos</span>
+        <span class="tag-purple">Código real</span>
+        <span class="tag-pink">Dificultad progresiva</span>
+      </div>
+      <a href="vulnerabilidades.html" class="btn btn-green" style="width:100%;justify-content:center;">🔍 Iniciar Desafío</a>
+    </div>
+
+  </div>
+
+  <!-- Recent Activity -->
+  <h2 class="section-title">📋 Actividad reciente</h2>
+  <div class="activity-list" id="activity-list">
+    <!-- filled by JS -->
+  </div>
+
+  <!-- Daily Tips -->
+  <h2 class="section-title">💡 Consejo del día</h2>
+  <div class="tips-section">
+    <div class="tip-display">
+      <div class="tip-icon" id="tip-icon">🔐</div>
+      <div class="tip-content">
+        <div class="tip-label">Consejo de seguridad</div>
+        <div class="tip-text" id="tip-text">Cargando consejo…</div>
+      </div>
+    </div>
+    <div class="tip-nav">
+      <button class="tip-btn" id="tip-prev">◀ Anterior</button>
+      <button class="tip-btn" id="tip-next">Siguiente ▶</button>
+    </div>
+  </div>
+
+</main>
+
+<footer>
+  Hecho con <span>❤️</span> para la comunidad de ciberseguridad &nbsp;·&nbsp; CyberLearn © 2025
+</footer>
+
+<!-- Auth -->
+<script src="js/auth.js"></script>
+<script>
+/* ═══════════════════════════════════════════
+   Auth Guard
+═══════════════════════════════════════════ */
+(function () {
+  if (typeof Auth === 'undefined' || !Auth.isLoggedIn()) {
+    window.location.href = 'index.html';
+  }
+})();
+
+/* ═══════════════════════════════════════════
+   Matrix Rain
+═══════════════════════════════════════════ */
+(function () {
+  const canvas = document.getElementById('matrix-canvas');
+  const ctx = canvas.getContext('2d');
+  let cols, drops;
+  const chars = '01アイウエオカキクケコサシスセソ abcdefghijklmnopqrstuvwxyz<>{}[]';
+
+  function init() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    cols = Math.floor(canvas.width / 16);
+    drops = Array.from({ length: cols }, () => Math.random() * -50);
+  }
+
+  function draw() {
+    ctx.fillStyle = 'rgba(10,10,15,0.05)';
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = '#00f5ff';
+    ctx.font = '14px monospace';
+    drops.forEach((y, i) => {
+      const char = chars[Math.floor(Math.random() * chars.length)];
+      ctx.fillText(char, i * 16, y * 16);
+      if (y * 16 > canvas.height && Math.random() > 0.975) drops[i] = 0;
+      drops[i] += 0.5;
+    });
+  }
+
+  init();
+  window.addEventListener('resize', init);
+  setInterval(draw, 60);
+})();
+
+/* ═══════════════════════════════════════════
+   Load User Data
+═══════════════════════════════════════════ */
+document.addEventListener('DOMContentLoaded', function () {
+  const session = Auth.getSession();
+  const username = session ? session.username : 'Hacker';
+  const initial = username.charAt(0).toUpperCase();
+
+  document.getElementById('nav-username').textContent = username;
+  document.getElementById('nav-avatar').textContent = initial;
+
+  // Typewriter
+  typeWriter('welcome-title', `> Bienvenido, ${username}! Continúa tu aprendizaje_`, 60);
+
+  // Stats
+  const progress = Auth.getProgress ? Auth.getProgress() : {};
+  animateNumber('stat-points', progress.points || 0);
+  animateNumber('stat-quizzes', progress.quizzesCompleted || 0);
+  animateNumber('stat-games', progress.gamesCompleted || 0);
+  animateNumber('stat-streak', progress.streak || 1);
+
+  // Activity
+  renderActivity(progress);
+
+  // Tips
+  initTips();
+
+  // Logout
+  document.getElementById('btn-logout').addEventListener('click', function () {
+    Auth.logout();
+    window.location.href = 'index.html';
+  });
+});
+
+/* ── Typewriter ── */
+function typeWriter(elId, text, speed) {
+  const el = document.getElementById(elId);
+  let i = 0;
+  el.innerHTML = '<span class="cursor"></span>';
+  const timer = setInterval(function () {
+    if (i < text.length) {
+      el.innerHTML = text.substring(0, i + 1) + '<span class="cursor"></span>';
+      i++;
+    } else {
+      clearInterval(timer);
+    }
+  }, speed);
+}
+
+/* ── Animate Number ── */
+function animateNumber(id, target) {
+  const el = document.getElementById(id);
+  let current = 0;
+  const step = Math.max(1, Math.ceil(target / 40));
+  const timer = setInterval(function () {
+    current = Math.min(current + step, target);
+    el.textContent = current;
+    if (current >= target) clearInterval(timer);
+  }, 30);
+}
+
+/* ── Render Activity ── */
+function renderActivity(progress) {
+  const container = document.getElementById('activity-list');
+  const history = (progress && progress.history) ? progress.history : [];
+
+  const defaultActivity = [
+    { icon: '🛡️', bg: 'rgba(0,245,255,.1)', title: '¡Bienvenido a CyberLearn!', time: 'Hoy', score: null },
+    { icon: '📚', bg: 'rgba(123,47,255,.1)', title: 'Glosario disponible', time: 'Siempre disponible', score: null },
+    { icon: '🐛', bg: 'rgba(0,255,136,.1)', title: 'Desafíos de código listos', time: 'Nuevos cada semana', score: null },
+  ];
+
+  const items = history.length > 0
+    ? history.slice(-5).reverse().map(h => ({
+        icon: h.type === 'quiz' ? '🧠' : h.type === 'vuln' ? '🐛' : '📚',
+        bg: h.type === 'quiz' ? 'rgba(0,245,255,.1)' : 'rgba(123,47,255,.1)',
+        title: h.description || 'Actividad',
+        time: h.date || 'Reciente',
+        score: h.score != null ? `+${h.score} pts` : null,
+      }))
+    : defaultActivity;
+
+  container.innerHTML = items.map(item => `
+    <div class="activity-item">
+      <div class="activity-icon" style="background:${item.bg}">${item.icon}</div>
+      <div class="activity-text">
+        <div class="activity-title">${item.title}</div>
+        <div class="activity-time">${item.time}</div>
+      </div>
+      ${item.score ? `<div class="activity-score">${item.score}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+/* ── Tips ── */
+const TIPS = [
+  { icon: '🔐', text: 'Usa una contraseña única para cada servicio. Un gestor de contraseñas como Bitwarden o 1Password te facilita la vida.' },
+  { icon: '📱', text: 'Activa la autenticación en dos pasos (2FA) en todas tus cuentas importantes. Una app como Google Authenticator añade una capa de seguridad extra.' },
+  { icon: '🔄', text: 'Mantén tu software siempre actualizado. La mayoría de los ataques explotan vulnerabilidades conocidas con parches disponibles.' },
+  { icon: '📧', text: 'Desconfía de emails urgentes que pidan datos personales. Ningún banco o servicio legítimo te pedirá tu contraseña por email.' },
+  { icon: '🌐', text: 'En redes Wi-Fi públicas, usa siempre una VPN. Tu tráfico puede ser interceptado fácilmente en redes sin cifrar.' },
+  { icon: '💾', text: 'Realiza copias de seguridad regulares. La regla 3-2-1: 3 copias, en 2 medios distintos, 1 fuera de tu ubicación.' },
+  { icon: '🔍', text: 'Verifica siempre la URL antes de introducir credenciales. Los sitios de phishing imitan webs legítimas con pequeñas variaciones.' },
+  { icon: '🛡️', text: 'El principio de mínimo privilegio es clave: da a usuarios y aplicaciones solo los permisos estrictamente necesarios.' },
+  { icon: '🧠', text: 'El eslabón más débil en seguridad es el factor humano. La ingeniería social explota nuestra confianza, no los sistemas.' },
+  { icon: '🔒', text: 'HTTPS no garantiza que un sitio sea legítimo, solo que la conexión está cifrada. Siempre verifica el dominio completo.' },
+];
+
+let tipIndex = 0;
+
+function initTips() {
+  tipIndex = Math.floor(Math.random() * TIPS.length);
+  renderTip();
+  document.getElementById('tip-prev').addEventListener('click', function () {
+    tipIndex = (tipIndex - 1 + TIPS.length) % TIPS.length;
+    renderTip();
+  });
+  document.getElementById('tip-next').addEventListener('click', function () {
+    tipIndex = (tipIndex + 1) % TIPS.length;
+    renderTip();
+  });
+  // Auto-rotate every 10s
+  setInterval(function () {
+    tipIndex = (tipIndex + 1) % TIPS.length;
+    renderTip();
+  }, 10000);
+}
+
+function renderTip() {
+  const tip = TIPS[tipIndex];
+  document.getElementById('tip-icon').textContent = tip.icon;
+  const textEl = document.getElementById('tip-text');
+  textEl.style.opacity = '0';
+  setTimeout(function () {
+    textEl.textContent = tip.text;
+    textEl.style.transition = 'opacity .4s';
+    textEl.style.opacity = '1';
+  }, 150);
+}
+</script>
+</body>
+</html>
