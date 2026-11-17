@@ -476,12 +476,15 @@ p {
 
 .invalid-feedback {
   color: var(--danger);
-  font-size: 0.78rem;
-  margin-top: 0.3rem;
+  font-size: 0.8rem;
+  margin-top: 0.35rem;
   display: none;
 }
 
-.form-control.is-invalid + .invalid-feedback {
+.invalid-feedback:not(:empty),
+.invalid-feedback.is-visible,
+.form-control.is-invalid + .invalid-feedback,
+.input-group:has(.form-control.is-invalid) + .invalid-feedback {
   display: block;
 }
 

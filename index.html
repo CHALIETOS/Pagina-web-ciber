@@ -340,7 +340,7 @@
               id="reg-password"
               name="password"
               class="form-control"
-              placeholder="Mín. 8 chars, 1 mayúscula, 1 número, 1 especial"
+              placeholder="Mínimo 6 caracteres"
               autocomplete="new-password"
               required
               aria-required="true"
@@ -597,11 +597,17 @@ function setFieldState(input, errId, result) {
   if (result.valid) {
     input.classList.remove('is-invalid');
     input.classList.add('is-valid');
-    if (errEl) errEl.textContent = '';
+    if (errEl) {
+      errEl.textContent = '';
+      errEl.style.display = 'none';
+    }
   } else {
     input.classList.remove('is-valid');
     input.classList.add('is-invalid');
-    if (errEl) errEl.textContent = result.message;
+    if (errEl) {
+      errEl.textContent = result.message;
+      errEl.style.display = 'block';
+    }
   }
 }
 
@@ -627,23 +633,38 @@ function handleLogin(event) {
 
   if (!userVal) {
     userEl.classList.add('is-invalid');
-    if (userErr) userErr.textContent = 'Este campo es obligatorio.';
+    if (userErr) {
+      userErr.textContent = 'Este campo es obligatorio.';
+      userErr.style.display = 'block';
+    }
     valid = false;
   } else {
     userEl.classList.remove('is-invalid');
-    if (userErr) userErr.textContent = '';
+    if (userErr) {
+      userErr.textContent = '';
+      userErr.style.display = 'none';
+    }
   }
 
   if (!passVal) {
     passEl.classList.add('is-invalid');
-    if (passErr) passErr.textContent = 'Este campo es obligatorio.';
+    if (passErr) {
+      passErr.textContent = 'Este campo es obligatorio.';
+      passErr.style.display = 'block';
+    }
     valid = false;
   } else {
     passEl.classList.remove('is-invalid');
-    if (passErr) passErr.textContent = '';
+    if (passErr) {
+      passErr.textContent = '';
+      passErr.style.display = 'none';
+    }
   }
 
-  if (!valid) return;
+  if (!valid) {
+    showAlert('Por favor, introduce tu usuario y contraseña.', 'error');
+    return;
+  }
 
   // Mostrar spinner
   btn.disabled       = true;
@@ -711,7 +732,15 @@ function handleRegister(event) {
   setFieldState(confirmEl, 'reg-confirm-err', cCheck);
   if (!cCheck.valid) valid = false;
 
-  if (!valid) return;
+  if (!valid) {
+    const errorMsg = (!uCheck.valid && uCheck.message) ||
+                     (!eCheck.valid && eCheck.message) ||
+                     (!pCheck.valid && pCheck.message) ||
+                     (!cCheck.valid && cCheck.message) ||
+                     'Por favor, revisa los campos señalados.';
+    showAlert(errorMsg, 'error');
+    return;
+  }
 
   // Mostrar spinner
   btn.disabled       = true;

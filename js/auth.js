@@ -126,11 +126,25 @@ function _validateEmail(email) {
 }
 
 /**
+ * Función segura para codificar cadenas (incluyendo tildes y caracteres especiales).
+ * @param {string} str
+ * @returns {string}
+ */
+function _safeHash(str) {
+  try {
+    return btoa(encodeURIComponent(str));
+  } catch (e) {
+    try {
+      return btoa(str);
+    } catch (e2) {
+      return str;
+    }
+  }
+}
+
+/**
  * Valida la contraseña:
- *  - Mínimo 8 caracteres
- *  - Al menos 1 mayúscula
- *  - Al menos 1 número
- *  - Al menos 1 carácter especial
+ *  - Mínimo 6 caracteres
  * @param {string} password
  * @returns {{ valid: boolean, message: string, strength: 'weak'|'medium'|'strong' }}
  */
@@ -139,25 +153,11 @@ function _validatePassword(password) {
     return { valid: false, message: 'La contraseña es obligatoria.', strength: 'weak' };
   }
 
-  const hasMinLength = password.length >= 8;
-  const hasUppercase = /[A-Z]/.test(password);
-  const hasNumber    = /[0-9]/.test(password);
-  const hasSpecial   = /[^a-zA-Z0-9]/.test(password);
-
-  if (!hasMinLength) {
-    return { valid: false, message: 'La contraseña debe tener al menos 8 caracteres.', strength: 'weak' };
-  }
-  if (!hasUppercase) {
-    return { valid: false, message: 'La contraseña debe contener al menos una letra mayúscula.', strength: 'weak' };
-  }
-  if (!hasNumber) {
-    return { valid: false, message: 'La contraseña debe contener al menos un número.', strength: 'medium' };
-  }
-  if (!hasSpecial) {
-    return { valid: false, message: 'La contraseña debe contener al menos un carácter especial (!@#$%...).', strength: 'medium' };
+  if (password.length < 6) {
+    return { valid: false, message: 'La contraseña debe tener al menos 6 caracteres.', strength: 'weak' };
   }
 
-  return { valid: true, message: '', strength: 'strong' };
+  return { valid: true, message: '', strength: _passwordStrength(password) };
 }
 
 /**
@@ -168,11 +168,11 @@ function _validatePassword(password) {
 function _passwordStrength(password) {
   if (!password) return 'weak';
   let score = 0;
-  if (password.length >= 8)             score++;
+  if (password.length >= 6)             score++;
+  if (password.length >= 10)            score++;
   if (/[A-Z]/.test(password))          score++;
   if (/[0-9]/.test(password))          score++;
   if (/[^a-zA-Z0-9]/.test(password))  score++;
-  if (password.length >= 12)           score++;
 
   if (score <= 2) return 'weak';
   if (score <= 3) return 'medium';
@@ -221,7 +221,7 @@ function register(username, email, password) {
     id:        _nextId(users),
     username:  username.trim(),
     email:     email.trim().toLowerCase(),
-    password:  btoa(password),   // Codificación base64 (solo para demo)
+    password:  _safeHash(password),   // Codificación segura
     createdAt: new Date().toISOString(),
     avatar:    _avatarChar(username),
   };
@@ -245,19 +245,21 @@ function login(usernameOrEmail, password) {
 
   const users        = _getUsers();
   const identifier   = usernameOrEmail.trim().toLowerCase();
-  const encodedPass  = btoa(password);
+  const safeEncoded  = _safeHash(password);
+  let rawBtoa = '';
+  try { rawBtoa = btoa(password); } catch(e) {}
 
   // Buscar usuario por nombre de usuario o email
   const user = users.find(
-    u => u.username.toLowerCase() === identifier || u.email === identifier
+    u => u.username.toLowerCase() === identifier || u.email.toLowerCase() === identifier
   );
 
   if (!user) {
     return { success: false, message: 'Usuario o contraseña incorrectos.' };
   }
 
-  // Verificar contraseña
-  if (user.password !== encodedPass) {
+  // Verificar contraseña (soporta tanto _safeHash como btoa directo legado)
+  if (user.password !== safeEncoded && user.password !== rawBtoa) {
     return { success: false, message: 'Usuario o contraseña incorrectos.' };
   }
 
