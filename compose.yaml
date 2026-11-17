@@ -1,0 +1,28 @@
+# ==============================================================================
+# compose.yaml - CiberFaro LAB (Puesta en Producción Segura)
+# ==============================================================================
+
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: ciberfaro_web
+    restart: unless-stopped
+    # Vinculación estricta a localhost (127.0.0.1) para evitar exposición pública en la red (Sesión 1 y 2)
+    ports:
+      - "127.0.0.1:8000:8000"
+    # Carga de variables de entorno y secretos fuera del repositorio
+    env_file:
+      - .env
+    environment:
+      - DATABASE_PATH=/app/data/ciberfaro.db
+    # Volumen persistente para la base de datos SQLite (Sesión 1: persistencia tras reinicio)
+    volumes:
+      - ./data:/app/data
+    # Límites de recursos de seguridad
+    deploy:
+      resources:
+        limits:
+          cpus: '1.0'
+          memory: 512M

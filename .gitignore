@@ -1,0 +1,30 @@
+# Secretos y variables de entorno (OBLIGATORIO para Sesión 2)
+.env
+.env.local
+*.env
+
+# Base de datos y volúmenes de datos locales
+data/
+*.db
+*.sqlite
+*.sqlite3
+
+# Python y entornos virtuales
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+ENV/
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Logs del sistema y contenedores
+*.log
+docker-compose.override.yml
+
+# IDEs y sistemas operativos
+.DS_Store
+.idea/
+.vscode/

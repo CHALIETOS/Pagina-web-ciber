@@ -672,7 +672,15 @@ function handleLogin(event) {
   spinner.style.display = 'inline-block';
 
   // Simular latencia de red (UX)
-  setTimeout(() => {
+  setTimeout(async () => {
+    try {
+      await fetch('/api/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username_or_email: userVal, password: passVal })
+      });
+    } catch (e) {}
+
     const result = window.Auth.login(userVal, passVal);
 
     btn.disabled       = false;
@@ -747,7 +755,15 @@ function handleRegister(event) {
   btnTxt.textContent = 'Creando cuenta…';
   spinner.style.display = 'inline-block';
 
-  setTimeout(() => {
+  setTimeout(async () => {
+    try {
+      await fetch('/api/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ username, email, password: pass })
+      });
+    } catch (e) {}
+
     const result = window.Auth.register(username, email, pass);
 
     btn.disabled       = false;

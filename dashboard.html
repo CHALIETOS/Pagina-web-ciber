@@ -585,6 +585,28 @@
 
   </div>
 
+  <!-- ── CiberFaro LAB: Alta de Dominio y Alertas Simuladas (Sesión 3) ── -->
+  <h2 class="section-title">🌐 CiberFaro LAB: Monitor de Dominios & Alertas</h2>
+  <div class="card" style="margin-bottom: 2rem; border-color: rgba(0,212,255,0.3); background: rgba(13,18,36,0.85);">
+    <p style="color: var(--text-dim); margin-bottom: 1.2rem; font-size: 0.95rem;">
+      Módulo práctico para la <strong>Sesión 3 (Hacking Ético)</strong>: Da de alta dominios autorizados de laboratorio para auditar su seguridad y recibir alertas simuladas.
+    </p>
+
+    <form id="form-add-domain" onsubmit="handleDomainSubmit(event)" style="display:flex; gap:10px; flex-wrap:wrap; margin-bottom: 1.5rem;">
+      <input type="text" id="domain-input" placeholder="ej. midominio.es o api.sitio.com" required
+             style="flex:1; min-width:240px; background:rgba(0,0,0,0.4); border:1px solid var(--border); color:var(--text); padding:0.7rem 1rem; border-radius:4px; font-family:monospace; outline:none;" />
+      <button type="submit" class="btn btn-primary" id="btn-add-domain">
+        ➕ Alta de Dominio
+      </button>
+    </form>
+    <div id="domain-msg" style="display:none; margin-bottom:1rem; font-size:0.88rem; padding:0.6rem 1rem; border-radius:4px;"></div>
+
+    <h3 style="font-size: 1.05rem; color: var(--accent-cyan); margin-bottom: 0.8rem;">Dominios Monitorizados y Alertas Simuladas</h3>
+    <div id="domains-list" style="display:grid; gap:1rem;">
+      <div style="color:var(--text-dim); font-size:0.9rem;">Cargando dominios…</div>
+    </div>
+  </div>
+
   <!-- Recent Activity -->
   <h2 class="section-title">📋 Actividad reciente</h2>
   <div class="activity-list" id="activity-list">
@@ -686,12 +708,140 @@ document.addEventListener('DOMContentLoaded', function () {
   // Tips
   initTips();
 
+  // Cargar dominios y alertas (Sesión 3)
+  loadDomains();
+
   // Logout
-  document.getElementById('btn-logout').addEventListener('click', function () {
+  document.getElementById('btn-logout').addEventListener('click', async function () {
+    try { await fetch('/api/logout', { method: 'POST' }); } catch(e) {}
     Auth.logout();
     window.location.href = 'index.html';
   });
 });
+
+/* ── Dominios y Alertas (CiberFaro LAB) ── */
+async function loadDomains() {
+  const container = document.getElementById('domains-list');
+  if (!container) return;
+
+  try {
+    const res = await fetch('/api/domains');
+    if (res.ok) {
+      const data = await res.json();
+      const alertsRes = await fetch('/api/alerts');
+      const alertsData = alertsRes.ok ? await alertsRes.json() : { alerts: [] };
+      renderDomains(data.domains || [], alertsData.alerts || []);
+      return;
+    }
+  } catch (err) {
+    // Si corre en frontend estático sin backend, usar fallback localStorage
+  }
+
+  // Fallback localStorage
+  const localDomains = JSON.parse(localStorage.getItem('ciberfaro_domains') || '[]');
+  const localAlerts = JSON.parse(localStorage.getItem('ciberfaro_alerts') || '[]');
+  renderDomains(localDomains, localAlerts);
+}
+
+function renderDomains(domains, alerts) {
+  const container = document.getElementById('domains-list');
+  if (!container) return;
+
+  if (domains.length === 0) {
+    container.innerHTML = '<div style="color:var(--text-dim); padding:1rem; border:1px dashed var(--border); border-radius:4px; text-align:center;">No tienes ningún dominio dado de alta. ¡Añade uno arriba para monitorizarlo!</div>';
+    return;
+  }
+
+  container.innerHTML = domains.map(d => {
+    const dAlerts = alerts.filter(a => a.domain_id === d.id || a.domain_name === d.domain_name);
+    return `
+      <div style="background:rgba(0,0,0,0.4); border:1px solid rgba(0,255,65,0.2); border-radius:6px; padding:1rem;">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:0.5rem; flex-wrap:wrap; gap:8px;">
+          <div>
+            <span style="font-weight:bold; color:var(--accent-green); font-size:1.05rem;">🌐 ${escapeHtml(d.domain_name)}</span>
+            <span style="font-size:0.75rem; background:rgba(0,255,65,0.15); color:var(--accent-green); padding:2px 8px; border-radius:12px; margin-left:8px;">● ${escapeHtml(d.status || 'monitorizado')}</span>
+          </div>
+          <button onclick="handleDeleteDomain(${d.id}, '${escapeHtml(d.domain_name)}')" class="btn btn-danger" style="padding:4px 10px; font-size:0.8rem;">🗑 Eliminar</button>
+        </div>
+        <div style="font-size:0.85rem; color:var(--text-dim); margin-bottom:0.5rem;">Alta: ${new Date(d.created_at).toLocaleDateString()}</div>
+        ${dAlerts.length > 0 ? `
+          <div style="border-top:1px solid rgba(255,255,255,0.08); padding-top:0.5rem; margin-top:0.5rem;">
+            <div style="font-size:0.8rem; color:var(--accent-cyan); margin-bottom:4px; font-weight:bold;">Alertas de Seguridad Detectadas:</div>
+            ${dAlerts.map(a => `
+              <div style="font-size:0.8rem; padding:4px 8px; margin-bottom:4px; border-radius:4px; background:${a.severity === 'danger' ? 'rgba(239,68,68,0.15)' : a.severity === 'warning' ? 'rgba(245,158,11,0.15)' : 'rgba(0,212,255,0.1)'}; color:${a.severity === 'danger' ? '#ef4444' : a.severity === 'warning' ? '#f59e0b' : '#00d4ff'}; border-left:3px solid ${a.severity === 'danger' ? '#ef4444' : a.severity === 'warning' ? '#f59e0b' : '#00d4ff'};">
+                <strong>[${(a.severity || 'INFO').toUpperCase()}]</strong> ${escapeHtml(a.title)}: <span style="color:var(--text-dim);">${escapeHtml(a.description)}</span>
+              </div>
+            `).join('')}
+          </div>
+        ` : '<div style="font-size:0.8rem; color:var(--text-dim);">Sin alertas críticas registradas.</div>'}
+      </div>
+    `;
+  }).join('');
+}
+
+async function handleDomainSubmit(event) {
+  event.preventDefault();
+  const input = document.getElementById('domain-input');
+  const msgEl = document.getElementById('domain-msg');
+  const domain = input.value.trim().toLowerCase();
+
+  try {
+    const res = await fetch('/api/domains', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ domain_name: domain })
+    });
+    const data = await res.json();
+    if (res.ok) {
+      msgEl.style.display = 'block';
+      msgEl.style.background = 'rgba(16,185,129,0.2)';
+      msgEl.style.color = '#10b981';
+      msgEl.textContent = '✅ ' + (data.message || 'Dominio dado de alta correctamente.');
+      input.value = '';
+      loadDomains();
+      setTimeout(() => { msgEl.style.display = 'none'; }, 4000);
+      return;
+    } else {
+      msgEl.style.display = 'block';
+      msgEl.style.background = 'rgba(239,68,68,0.2)';
+      msgEl.style.color = '#ef4444';
+      msgEl.textContent = '❌ ' + (data.detail || 'Error al dar de alta el dominio.');
+      return;
+    }
+  } catch (err) {
+    // Fallback local
+    const local = JSON.parse(localStorage.getItem('ciberfaro_domains') || '[]');
+    local.push({ id: Date.now(), domain_name: domain, status: 'monitorizado', created_at: new Date().toISOString() });
+    localStorage.setItem('ciberfaro_domains', JSON.stringify(local));
+    input.value = '';
+    loadDomains();
+  }
+}
+
+async function handleDeleteDomain(id, name) {
+  if (!confirm(`¿Deseas dar de baja el dominio ${name}?`)) return;
+
+  try {
+    const res = await fetch(`/api/domains/${id}`, { method: 'DELETE' });
+    if (res.ok) {
+      loadDomains();
+      return;
+    }
+  } catch(e) {}
+
+  // Fallback local
+  let local = JSON.parse(localStorage.getItem('ciberfaro_domains') || '[]');
+  local = local.filter(d => d.id !== id && d.domain_name !== name);
+  localStorage.setItem('ciberfaro_domains', JSON.stringify(local));
+  loadDomains();
+}
+
+function escapeHtml(str) {
+  if (!str) return '';
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
 
 /* ── Typewriter ── */
 function typeWriter(elId, text, speed) {
